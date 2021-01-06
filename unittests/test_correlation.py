@@ -121,21 +121,6 @@ class CorrelationTest(TestCase):
         with self.assertRaises(IndexError):
             correlation(test_x, test_y, test_mean_x, test_mean_y)
 
-    def test_correlation_x_and_y_same(self):
-        # arrange
-        test_x = [1.2, 0.05, -3.6, 18.9, -5.4, 8.004, 12.659, 0.143]
-        test_y = [1.2, 0.05, -3.6, 18.9, -5.4, 8.004, 12.659, 0.143]
-        test_mean_x = 3.9944999999999995
-        test_mean_y = 3.9944999999999995
-
-        expected_output = 1.0
-
-        # act
-        output = correlation(test_x, test_y, test_mean_x, test_mean_y)
-
-        # assert
-        self.assertEqual(output, expected_output)
-
     def test_correlation_x_and_y_each_same_num(self):
         # x all one num, y all another
         # arrange
