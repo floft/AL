@@ -45,19 +45,25 @@ class AutoCorrelationTest(TestCase):
         # arrange
         test_data = []
         test_mean = None
+        expected_output = 0.0
 
-        # act and assert
-        with self.assertRaises(ZeroDivisionError):
-            autocorrelation(test_data, test_mean)
+        # act
+        output = autocorrelation(test_data, test_mean)
+
+        # assert
+        self.assertEqual(output, expected_output)
 
     def test_autocorrelation_onedatapoint(self):
         # arrange
         test_data = [3.2]
         test_mean = 3.2
+        expected_output = 0.0
 
-        # act and assert
-        with self.assertRaises(ZeroDivisionError):
-            autocorrelation(test_data, test_mean)
+        # act
+        output = autocorrelation(test_data, test_mean)
+
+        # assert
+        self.assertEqual(output, expected_output)
 
     def test_autocorrelation_twodatapoints(self):
         # arrange

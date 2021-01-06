@@ -19,7 +19,7 @@ class MeanCrossingsTest(TestCase):
         # assert
         self.assertEqual(expected_output, output)
 
-    def test_mean_crossings_oneentryismedianbutstillcrosses(self):
+    def test_mean_crossings_oneentryismeanbutstillcrosses(self):
         # arrange
         test_data = [1.2, 0.05, -3.6, 18.9, -5.4, 8.004, 12.659, 0.143]
         test_mean = 8.004
@@ -31,7 +31,7 @@ class MeanCrossingsTest(TestCase):
         # assert
         self.assertEqual(expected_output, output)
 
-    def test_mean_crossings_oneentryismedianbutdoesntcross(self):
+    def test_mean_crossings_oneentryismeanbutdoesntcross(self):
         # arrange
         test_data = [1.2, 0.05, -3.6, 18.9, -5.4, 8.004, 7.659, 0.143]
         test_mean = 8.004
