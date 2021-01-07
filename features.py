@@ -51,8 +51,6 @@ def zero_crossings(data, median):
             if rel < 0:
                 count += 1
             rel = 1
-        else:
-            rel = 0
     return count
 
 
@@ -72,8 +70,6 @@ def mean_crossings(data, mean):
             if rel < 0:
                 count += 1
             rel = 1
-        else:
-            rel = 0
     return count
 
 
