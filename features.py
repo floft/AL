@@ -32,7 +32,7 @@ def median_absolute_deviation(data, axis=None):
     """ Compute median absolute deviation of data.
     Input data is an array with an optional specified axis of computation.
     """
-    return np.median(np.absolute(data - np.mean(data, axis)), axis)
+    return np.median(np.absolute(data - np.median(data, axis)), axis)
 
 
 def zero_crossings(data, median):
@@ -51,8 +51,6 @@ def zero_crossings(data, median):
             if rel < 0:
                 count += 1
             rel = 1
-        else:
-            rel = 0
     return count
 
 
@@ -72,8 +70,6 @@ def mean_crossings(data, mean):
             if rel < 0:
                 count += 1
             rel = 1
-        else:
-            rel = 0
     return count
 
 
