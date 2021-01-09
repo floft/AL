@@ -348,13 +348,11 @@ class Location:
                 if self.valid_location_data(self.latitude, self.longitude, self.altitude):
                     for i in [self.yaw, self.pitch, self.roll, self.rotx, self.roty,
                               self.rotz, self.accx, self.accy, self.accz, self.acctotal]:
-                        if len(i) > self.conf.samplesize:  # remove elements ouside window
-                            i = i[:self.conf.samplesize]
-                        xpoint.extend(features.generate_statistical_features(i))
+                        xpoint.extend(features.generate_features(i, self.conf))
                     for i in [self.latitude, self.longitude, self.altitude]:
-                        xpoint.extend(features.generate_statistical_features(i))
+                        xpoint.extend(features.generate_features(i, self.conf))
                     for i in [self.course, self.speed, self.hacc, self.vacc]:
-                        xpoint.extend(features.generate_statistical_features(i))
+                        xpoint.extend(features.generate_features(i, self.conf))
                     xpoint.append(distance)
                     xpoint.append(hcr)
                     xpoint.append(sr)
