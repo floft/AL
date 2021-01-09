@@ -234,24 +234,28 @@ class Location:
         """
         if datatype == "latitude":
             minrange = self.minlat
-            maxrange = self.minlat
+            maxrange = self.maxlat
         else:
             minrange = self.minlong
-            maxrange = self.minlong
+            maxrange = self.maxlong
+
         if not minrange:
             minrange = float(value)
         elif float(value) < minrange:
             minrange = float(value)
+
         if not maxrange:
             maxrange = float(value)
         elif float(value) > maxrange:
             maxrange = float(value)
+
         if datatype == "latitude":
             self.minlat = minrange
-            self.minlat = maxrange
+            self.maxlat = maxrange
         else:
             self.minlong = minrange
-            self.minlong = maxrange
+            self.maxlong = maxrange
+
         return
 
     def calculate_time_and_space_features(self, dt):
