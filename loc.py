@@ -258,22 +258,6 @@ class Location:
 
         return
 
-    def calculate_time_and_space_features(self, dt):
-        """ Calculate time and distance features for one window of sensor data.
-        """
-        month = dt.month
-        dayofweek = dt.weekday()
-        hours = dt.hour
-        minutes = (dt.hour * 60) + dt.minute
-        seconds = (dt.hour * 3600) + (dt.minute * 60) + dt.second
-        distance = \
-            math.sqrt(((self.maxlat - self.minlat) * (self.maxlat - self.minlat)) +
-                      ((self.maxlong - self.minlong) * (self.maxlong - self.minlong)))
-        hcr = features.heading_change_rate(self.course, distance)
-        sr = features.stop_rate(self.latitude, self.longitude, distance)
-        trajectory = features.trajectory(self.latitude, self.longitude)
-        return month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory
-
     def read_sensors(self, infile, v1):
         """ Read and store one set of sensor readings.
         The first line is already read.
