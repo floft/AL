@@ -389,11 +389,11 @@ class Location:
         xpoint = list()
         for i in [st.yaw, st.pitch, st.roll, st.rotx, st.roty, st.rotz, st.accx,
                   st.accy, st.accz, st.acctotal]:
-            xpoint.extend(features.generate_statistical_features(i))
+            xpoint.extend(features.generate_features(i, st.conf))
         for i in [st.latitude, st.longitude, st.altitude]:
-            xpoint.extend(features.generate_statistical_features(i))
+            xpoint.extend(features.generate_features(i, st.conf))
         for i in [st.course, st.speed, st.hacc, st.vacc]:
-            xpoint.extend(features.generate_statistical_features(i))
+            xpoint.extend(features.generate_features(i, st.conf))
         xpoint.append(distance)
         xpoint.append(hcr)
         xpoint.append(sr)
