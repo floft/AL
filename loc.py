@@ -258,22 +258,6 @@ class Location:
 
         return
 
-    def calculate_time_and_space_features(self, dt):
-        """ Calculate time and distance features for one window of sensor data.
-        """
-        month = dt.month
-        dayofweek = dt.weekday()
-        hours = dt.hour
-        minutes = (dt.hour * 60) + dt.minute
-        seconds = (dt.hour * 3600) + (dt.minute * 60) + dt.second
-        distance = \
-            math.sqrt(((self.maxlat - self.minlat) * (self.maxlat - self.minlat)) +
-                      ((self.maxlong - self.minlong) * (self.maxlong - self.minlong)))
-        hcr = features.heading_change_rate(self.course, distance)
-        sr = features.stop_rate(self.latitude, self.longitude, distance)
-        trajectory = features.trajectory(self.latitude, self.longitude)
-        return month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory
-
     def read_sensors(self, infile, v1):
         """ Read and store one set of sensor readings.
         The first line is already read.
@@ -341,20 +325,18 @@ class Location:
                 gen = self.resetvars()
             pdt, v2, date, feat_time = self.read_sensors(features_datafile, v1)
             month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory = \
-                self.calculate_time_and_space_features(dt)
+                features.calculate_time_and_space_features(self, dt)
             if (count % self.conf.samplesize) == (self.conf.samplesize - 1):  # end of window
                 xpoint = list()
                 gen = 1
                 if self.valid_location_data(self.latitude, self.longitude, self.altitude):
                     for i in [self.yaw, self.pitch, self.roll, self.rotx, self.roty,
                               self.rotz, self.accx, self.accy, self.accz, self.acctotal]:
-                        if len(i) > self.conf.samplesize:  # remove elements ouside window
-                            i = i[:self.conf.samplesize]
-                        xpoint.extend(features.generate_statistical_features(i))
+                        xpoint.extend(features.generate_features(i, self.conf))
                     for i in [self.latitude, self.longitude, self.altitude]:
-                        xpoint.extend(features.generate_statistical_features(i))
+                        xpoint.extend(features.generate_features(i, self.conf))
                     for i in [self.course, self.speed, self.hacc, self.vacc]:
-                        xpoint.extend(features.generate_statistical_features(i))
+                        xpoint.extend(features.generate_features(i, self.conf))
                     xpoint.append(distance)
                     xpoint.append(hcr)
                     xpoint.append(sr)
@@ -391,11 +373,11 @@ class Location:
         xpoint = list()
         for i in [st.yaw, st.pitch, st.roll, st.rotx, st.roty, st.rotz, st.accx,
                   st.accy, st.accz, st.acctotal]:
-            xpoint.extend(features.generate_statistical_features(i))
+            xpoint.extend(features.generate_features(i, st.conf))
         for i in [st.latitude, st.longitude, st.altitude]:
-            xpoint.extend(features.generate_statistical_features(i))
+            xpoint.extend(features.generate_features(i, st.conf))
         for i in [st.course, st.speed, st.hacc, st.vacc]:
-            xpoint.extend(features.generate_statistical_features(i))
+            xpoint.extend(features.generate_features(i, st.conf))
         xpoint.append(distance)
         xpoint.append(hcr)
         xpoint.append(sr)
