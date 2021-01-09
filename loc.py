@@ -341,7 +341,7 @@ class Location:
                 gen = self.resetvars()
             pdt, v2, date, feat_time = self.read_sensors(features_datafile, v1)
             month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory = \
-                self.calculate_time_and_space_features(dt)
+                features.calculate_time_and_space_features(self, dt)
             if (count % self.conf.samplesize) == (self.conf.samplesize - 1):  # end of window
                 xpoint = list()
                 gen = 1
