@@ -305,9 +305,9 @@ class Location:
 
         valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
         self.latitude.append(float(v1))
+        self.update_location_range(float(v1), datatype="latitude")
         valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
         self.longitude.append(float(v1))
-        self.update_location_range(float(v1), datatype="latitude")
         self.update_location_range(float(v1), datatype="longitude")
         valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
         self.altitude.append(float(v1))
