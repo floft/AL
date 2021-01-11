@@ -95,3 +95,79 @@ class GenFeaturesTest(TestCase):
 
         # assert
         self.assertEqual(output, expected_output)
+
+    def test_genfeatures_regulardata_1_noabsolutefeatures(self):
+        # arrange
+        test_data = [1.2, 0.05, -3.6, 18.9, -5.4, 8.004, 12.659, 0.143]
+        test_config = Config(description='test')
+        test_config.samplesize = 25
+        test_config.fftfeatures = 0
+
+        expected_output = [
+            # "relative" features:
+            62.182375500000006, 7.885580225956743, 6.894875, 5.1715, 5, 4, 0.0, 62.182375500000006, 327.383232918375, 8361.83212000199, 12.609, 1.9741094569925508, 0.6676601713176257, -0.8374466713399569, -0.5801193286061433, 11.739285714285714, 8.491135658762625, 6.894875, 3.8266270048666886, 3
+        ]
+
+        # act
+        output = generate_features(test_data, test_config, include_absolute_features=False)
+
+        # assert
+        self.assertEqual(output, expected_output)
+
+    def test_genfeatures_regulardata_2_noabsolutefeatures(self):
+        # arrange
+        test_data = [-0.97743333,  0.57411701, -1.18404237, -1.9459411 ,  2.09424604,
+                     -1.51629388, -0.19929474, -0.41850196,  2.96623923, -0.4492357 ,
+                      2.15653345,  0.43581939, -0.49928927,  1.40950917, -1.12943589,
+                     -1.51951041,  0.46456604,  1.54215867,  1.49318207,  2.24503109,
+                     -0.34385401,  1.85638915, -1.33505047,  2.58477635,  2.68607923]
+        test_config = Config(description='test')
+        test_config.samplesize = 25
+        test_config.fftfeatures = 0
+
+        expected_output = [
+            # "relative" features:
+            2.2923933816717774, 1.514065184089436, 1.343780871616, 1.42056976, 15, 15, 0.0, 2.2923933816717774, 0.4408139170486851, 8.521282447985339, 2.8338224800000003, 3.4439489765027846, 0.1270052221197356, -1.3784637240805915, -0.15458842356585242, 1.9175983399999998, 1.220088284173332, 1.343780871616, 0.6976004234163856, 16
+        ]
+
+        # act
+        output = generate_features(test_data, test_config, include_absolute_features=False)
+
+        # assert
+        self.assertEqual(output, expected_output)
+
+    def test_genfeatures_allzeros_noabsolutefeatures(self):
+        # arrange
+        test_data = [0, 0.0, 000, 0.0000, 0, 0.0, 0, 000.0]
+        test_config = Config(description='test')
+        test_config.samplesize = 25
+        test_config.fftfeatures = 0
+
+        expected_output = [
+            # "relative" features:
+            0.0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0.0, -3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1
+        ]
+
+        # act
+        output = generate_features(test_data, test_config, include_absolute_features=False)
+
+        # assert
+        self.assertEqual(output, expected_output)
+
+    def test_genfeatures_allsamenum_noabsolutefeatures(self):
+        # arrange
+        test_data = [5.0, 5, 5.0, 5, 5.0000, 5, 5]
+        test_config = Config(description='test')
+        test_config.samplesize = 25
+        test_config.fftfeatures = 0
+
+        expected_output = [
+            # "relative" features:
+            0.0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0, -3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1
+        ]
+
+        # act
+        output = generate_features(test_data, test_config, include_absolute_features=False)
+
+        # assert
+        self.assertEqual(output, expected_output)
