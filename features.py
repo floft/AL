@@ -32,7 +32,7 @@ def median_absolute_deviation(data, axis=None):
     """ Compute median absolute deviation of data.
     Input data is an array with an optional specified axis of computation.
     """
-    return np.median(np.absolute(data - np.mean(data, axis)), axis)
+    return np.median(np.absolute(data - np.median(data, axis)), axis)
 
 
 def zero_crossings(data, median):
@@ -51,8 +51,6 @@ def zero_crossings(data, median):
             if rel < 0:
                 count += 1
             rel = 1
-        else:
-            rel = 0
     return count
 
 
@@ -72,8 +70,6 @@ def mean_crossings(data, mean):
             if rel < 0:
                 count += 1
             rel = 1
-        else:
-            rel = 0
     return count
 
 
@@ -274,71 +270,6 @@ def trajectory(latitude, longitude):
     difflong = maxl - minl
     slopepercent = difflong / difflat
     return math.atan(slopepercent)
-
-
-def generate_statistical_features(x):
-    """ Create a list of statistical features for a sequence of values
-    corresponding to one type of sensor (e.g., acceleration, rotation, location).
-    """
-    feature_list = list()
-
-    if len(x) == 0:
-        return feature_list
-    feature = max(x)  # max
-    feature_list.append(feature)
-    feature = min(x)  # min
-    feature_list.append(feature)
-    feature = 0  # sum
-    for i in x:
-        if i != 'None':
-            feature += i
-    feature_list.append(feature)
-    mean = feature / len(x)  # mean
-    feature_list.append(mean)
-    median = np.median(x)  # median
-    feature_list.append(median)
-    mav1 = np.median(list(map(abs, x)))  # mean absolute value
-    feature_list.append(mav1)
-    mav2 = np.median(list(map(abs, x)))  # median absolute value
-    feature_list.append(mav2)
-    variance = np.var(x)
-    feature_list.append(variance)  # variance
-    std = np.std(x)
-    feature_list.append(std)  # standard deviation
-    m1 = mean_absolute_deviation(x)  # mad1
-    feature_list.append(m1)
-    m2 = median_absolute_deviation(x)  # mad2
-    feature_list.append(m2)
-    zc = zero_crossings(x, median)  # zero crossings
-    feature_list.append(zc)
-    mc = mean_crossings(x, mean)  # mean crossings
-    feature_list.append(mc)
-    m1, m2, m3, m4 = moments(x)
-    feature_list.append(m1)
-    feature_list.append(m2)
-    feature_list.append(m3)
-    feature_list.append(m4)
-    ceps, entropy, energy, msignal, vsignal = fft_features(x)
-    feature_list.append(ceps)
-    feature_list.append(entropy)
-    feature_list.append(energy)
-    feature_list.append(msignal)
-    feature_list.append(vsignal)
-    feature_list.append(interquartile_range(x))
-    if mean == 0:  # cv
-        coefficient_of_variation = 0
-    else:
-        coefficient_of_variation = std / mean
-    feature_list.append(coefficient_of_variation)
-    feature_list.append(skewness(x, mean))
-    feature_list.append(kurtosis(x, mean, std))
-    se = signal_energy(x)
-    feature_list.append(se)
-    feature_list.append(log_signal_energy(x))
-    power = se / len(x)  # power
-    feature_list.append(power)
-    feature_list.append(autocorrelation(x, mean))
-    return feature_list
 
 
 def time_between_peaks(x):
