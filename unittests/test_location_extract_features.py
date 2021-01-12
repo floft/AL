@@ -22,7 +22,7 @@ class LocationExtractFeaturesTest(TestCase):
         test_config.translate = True
         test_config.filter_data = False
         test_config.fftfeatures = 0
-        test_config.gen_gps_statistical_features = True
+        test_config.gen_gps_abs_stat_features = True
 
         test_config.samplerate = 5  # 5Hz test data
         test_config.samplesize = test_config.samplerate * test_config.numseconds
@@ -161,7 +161,7 @@ class LocationExtractFeaturesTest(TestCase):
         test_config.translate = True
         test_config.filter_data = False
         test_config.fftfeatures = 0
-        test_config.gen_gps_statistical_features = False
+        test_config.gen_gps_abs_stat_features = False
 
         test_config.samplerate = 5  # 5Hz test data
         test_config.samplesize = test_config.samplerate * test_config.numseconds

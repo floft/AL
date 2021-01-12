@@ -443,7 +443,7 @@ def create_point(st, dt, filename, person_stats, clusters):
     xpoint.extend(twod_features(st))
     if st.conf.local == 1:
         # Only generate statistical features for GPS points if desired:
-        if st.conf.gen_gps_statistical_features:
+        if st.conf.gen_gps_abs_stat_features:
             for i in [st.latitude, st.longitude, st.altitude,
                       st.course, st.speed, st.hacc, st.vacc]:
                 xpoint.extend(generate_features(x=i, cf=st.conf))

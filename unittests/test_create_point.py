@@ -28,7 +28,7 @@ class CreatePointTest(TestCase):
         test_conf.fftfeatures = 0
         test_conf.local = 1
         test_conf.sfeatures = 0
-        test_conf.gen_gps_statistical_features = True
+        test_conf.gen_gps_abs_stat_features = True
         test_conf.gpsfeatures = 0
         test_conf.samplesize = 10
 
@@ -129,7 +129,7 @@ class CreatePointTest(TestCase):
         test_conf.fftfeatures = 0
         test_conf.local = 1
         test_conf.sfeatures = 0
-        test_conf.gen_gps_statistical_features = True
+        test_conf.gen_gps_abs_stat_features = True
         test_conf.gpsfeatures = 0
         test_conf.samplesize = 10
 
@@ -230,7 +230,7 @@ class CreatePointTest(TestCase):
         test_conf.fftfeatures = 0
         test_conf.local = 1
         test_conf.sfeatures = 1  # use person features
-        test_conf.gen_gps_statistical_features = True
+        test_conf.gen_gps_abs_stat_features = True
         test_conf.gpsfeatures = 0
 
         test_conf.num_hour_clusters = 5
@@ -347,7 +347,7 @@ class CreatePointTest(TestCase):
         test_conf.fftfeatures = 0
         test_conf.local = 1
         test_conf.sfeatures = 1  # use person features
-        test_conf.gen_gps_statistical_features = True
+        test_conf.gen_gps_abs_stat_features = True
         test_conf.gpsfeatures = 1
         test_conf.locmodel = 0
 
@@ -485,7 +485,7 @@ class CreatePointTest(TestCase):
         test_conf.fftfeatures = 0
         test_conf.local = 1
         test_conf.sfeatures = 0
-        test_conf.gen_gps_statistical_features = False
+        test_conf.gen_gps_abs_stat_features = False
         test_conf.gpsfeatures = 0
         test_conf.samplesize = 10
 
@@ -587,7 +587,7 @@ class CreatePointTest(TestCase):
         test_conf.fftfeatures = 0
         test_conf.local = 1
         test_conf.sfeatures = 1  # use person features
-        test_conf.gen_gps_statistical_features = False
+        test_conf.gen_gps_abs_stat_features = False
         test_conf.gpsfeatures = 1
         test_conf.locmodel = 0
 

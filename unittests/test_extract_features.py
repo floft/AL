@@ -29,7 +29,7 @@ class ExtractFeaturesTest(TestCase):
         test_config.filter_data = False
         test_config.fftfeatures = 0
         test_config.sfeatures = 0
-        test_config.gen_gps_statistical_features = True
+        test_config.gen_gps_abs_stat_features = True
 
         test_config.samplerate = 5  # 5Hz test data
         test_config.samplesize = test_config.samplerate * test_config.numseconds
@@ -191,7 +191,7 @@ class ExtractFeaturesTest(TestCase):
         test_config.filter_data = False
         test_config.fftfeatures = 0
         test_config.sfeatures = 1
-        test_config.gen_gps_statistical_features = True
+        test_config.gen_gps_abs_stat_features = True
 
         test_config.samplerate = 5  # 5Hz test data
         test_config.samplesize = test_config.samplerate * test_config.numseconds
@@ -360,7 +360,7 @@ class ExtractFeaturesTest(TestCase):
         test_config.filter_data = False
         test_config.fftfeatures = 0
         test_config.sfeatures = 1
-        test_config.gen_gps_statistical_features = False
+        test_config.gen_gps_abs_stat_features = False
 
         test_config.samplerate = 5  # 5Hz test data
         test_config.samplesize = test_config.samplerate * test_config.numseconds
