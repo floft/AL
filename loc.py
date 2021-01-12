@@ -345,10 +345,12 @@ class Location:
                         xpoint.extend(features.generate_features(i, self.conf))
 
                     for i in [self.latitude, self.longitude, self.altitude]:
-                        xpoint.extend(features.generate_features(i, self.conf))
+                        # Only include absolute features if enabled in config:
+                        xpoint.extend(features.generate_features(i, self.conf, include_absolute_features=self.conf.gen_gps_abs_stat_features))
 
                     for i in [self.course, self.speed, self.hacc, self.vacc]:
-                        xpoint.extend(features.generate_features(i, self.conf))
+                        # Only include absolute features if enabled in config:
+                        xpoint.extend(features.generate_features(i, self.conf, include_absolute_features=self.conf.gen_gps_abs_stat_features))
 
                     xpoint.append(distance)
                     xpoint.append(hcr)
@@ -398,10 +400,12 @@ class Location:
             xpoint.extend(features.generate_features(i, st.conf))
 
         for i in [st.latitude, st.longitude, st.altitude]:
-            xpoint.extend(features.generate_features(i, st.conf))
+            # Only include absolute features if enabled in config:
+            xpoint.extend(features.generate_features(i, st.conf, include_absolute_features=st.conf.gen_gps_abs_stat_features))
 
         for i in [st.course, st.speed, st.hacc, st.vacc]:
-            xpoint.extend(features.generate_features(i, st.conf))
+            # Only include absolute features if enabled in config:
+            xpoint.extend(features.generate_features(i, st.conf, include_absolute_features=st.conf.gen_gps_abs_stat_features))
 
         xpoint.append(distance)
         xpoint.append(hcr)
