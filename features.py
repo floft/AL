@@ -334,67 +334,96 @@ def twod_features(al):
     return flist
 
 
-def generate_features(x, cf: config.Config):
+def generate_features(x, cf: config.Config, include_absolute_features=True):
     """ Create a list of statistical features for a sequence of values
     corresponding to one type of sensor (e.g., acceleration, rotation, location).
+    Features are split into two types:
+     - "absolute": These tell information about the actual value of the sensors (e.g. mean, max, min, etc)
+     - "relative": These tell information about the relations between sensor values (variance, skewness, etc)
+    If include_absolute_features = False, don't include the "absolute" features.
     """
     flist = list()
 
     while len(x) > cf.samplesize:  # remove elements outside current window
         x = x[:cf.samplesize]
-    flist.append(max(x))
-    flist.append(min(x))
-    flist.append(np.sum(x))
-    mean_value = np.mean(x)  # mean
-    flist.append(mean_value)
-    median_value = np.median(x)  # median
-    flist.append(median_value)
-    newmap = [abs(number) for number in x]
-    mav1 = np.mean(newmap)  # mean absolute value
-    flist.append(mav1)
-    mav2 = np.median(newmap)  # median absolute value
-    flist.append(mav2)
+
+    # Set up values needed in both absolute and relative features:
+    mean_value = np.mean(x)
+    median_value = np.median(x)
+
+    # Absolute features:
+    if include_absolute_features:
+        flist.append(max(x))
+        flist.append(min(x))
+
+        flist.append(np.sum(x))
+
+        flist.append(mean_value)
+
+        flist.append(median_value)
+
+        newmap = [abs(number) for number in x]
+
+        mav1 = np.mean(newmap)  # mean absolute value
+        flist.append(mav1)
+
+        mav2 = np.median(newmap)  # median absolute value
+        flist.append(mav2)
+
+        if cf.fftfeatures == 1:
+            ceps, entropy, energy, msignal, vsignal = fft_features(x)
+            flist.append(ceps)
+            flist.append(entropy)
+            flist.append(energy)
+            flist.append(msignal)
+            flist.append(vsignal)
+
+        se = signal_energy(x)
+        flist.append(se)
+
+        lse = log_signal_energy(x)
+        flist.append(lse)
+
+        p = se / len(x)  # power
+        flist.append(p)
+
+    # Relative features:
     flist.append(np.var(x))
+
     std = np.std(x)
     flist.append(std)  # standard deviation
+
     flist.append(mean_absolute_deviation(x))
     flist.append(median_absolute_deviation(x))
+
     flist.append(zero_crossings(x, median_value))
     flist.append(mean_crossings(x, mean_value))
+
     m1, m2, m3, m4 = moments(x)
     flist.append(m1)
     flist.append(m2)
     flist.append(m3)
     flist.append(m4)
 
-    if cf.fftfeatures == 1:
-        ceps, entropy, energy, msignal, vsignal = fft_features(x)
-        flist.append(ceps)
-        flist.append(entropy)
-        flist.append(energy)
-        flist.append(msignal)
-        flist.append(vsignal)
-
     flist.append(interquartile_range(x))
+
     if mean_value == 0:
         coefficient_of_variation = 0
     else:
         coefficient_of_variation = std / mean_value
     flist.append(coefficient_of_variation)
+
     flist.append(skewness(x, mean_value))
+
     k = kurtosis(x, mean_value, std)
     flist.append(k)
-    se = signal_energy(x)
-    flist.append(se)
-    lse = log_signal_energy(x)
-    flist.append(lse)
-    p = se / len(x)  # power
-    flist.append(p)
+
     if len(x) > 1:
         ac = autocorrelation(x, mean_value)
     else:
         ac = 0
     flist.append(ac)
+
     diff1 = list()
     diff2 = list()
     for i in range(len(x)):
