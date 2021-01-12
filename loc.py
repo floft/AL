@@ -314,33 +314,48 @@ class Location:
 
         infile = os.path.join(self.conf.datapath, base_filename + self.conf.extension)
         features_datafile = open(infile, "r")  # process input file to create feature vector
+
         count = 0
+
         valid, date, feat_time, f1, f2, v1, v2 = self.read_entry(features_datafile)
+
         prevdt = utils.get_datetime(date, feat_time)
+
         gen = self.resetvars()
+
         while valid:
             dt = utils.get_datetime(date, feat_time)
             delta = dt - prevdt
+
             if self.new_window(delta, gen, count):  # start new window
                 gen = self.resetvars()
+
             pdt, v2, date, feat_time = self.read_sensors(features_datafile, v1)
+
             month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory = \
                 features.calculate_time_and_space_features(self, dt)
+
             if (count % self.conf.samplesize) == (self.conf.samplesize - 1):  # end of window
                 xpoint = list()
                 gen = 1
+
                 if self.valid_location_data(self.latitude, self.longitude, self.altitude):
                     for i in [self.yaw, self.pitch, self.roll, self.rotx, self.roty,
                               self.rotz, self.accx, self.accy, self.accz, self.acctotal]:
                         xpoint.extend(features.generate_features(i, self.conf))
+
                     for i in [self.latitude, self.longitude, self.altitude]:
-                        xpoint.extend(features.generate_features(i, self.conf))
+                        # Only include absolute features if enabled in config:
+                        xpoint.extend(features.generate_features(i, self.conf, include_absolute_features=self.conf.gen_gps_abs_stat_features))
+
                     for i in [self.course, self.speed, self.hacc, self.vacc]:
                         xpoint.extend(features.generate_features(i, self.conf))
+
                     xpoint.append(distance)
                     xpoint.append(hcr)
                     xpoint.append(sr)
                     xpoint.append(trajectory)
+
                     xpoint.append(month)
                     xpoint.append(dayofweek)
                     xpoint.append(hours)
@@ -352,16 +367,22 @@ class Location:
 
                     if place != 'None':
                         self.xdata.append(xpoint)
+
                         yvalue = self.map_location_name(place)
                         self.ydata.append(yvalue)
+
             if not valid:
                 prevdt = pdt
             else:
                 prevdt = utils.get_datetime(date, feat_time)
+
             count += 1
+
             if (count % 100000) == 0:
                 print('count', count)
+
             valid, date, feat_time, f1, f2, v1, v2 = self.read_entry(features_datafile)
+
         features_datafile.close()
         return
 
@@ -370,24 +391,33 @@ class Location:
         """ Use the pretrained location classifier to extract features from the
         input sensor values and map the feature vector onto a location type.
         """
+
         xpoint = list()
+
         for i in [st.yaw, st.pitch, st.roll, st.rotx, st.roty, st.rotz, st.accx,
                   st.accy, st.accz, st.acctotal]:
             xpoint.extend(features.generate_features(i, st.conf))
+
         for i in [st.latitude, st.longitude, st.altitude]:
-            xpoint.extend(features.generate_features(i, st.conf))
+            # Only include absolute features if enabled in config:
+            xpoint.extend(features.generate_features(i, st.conf, include_absolute_features=st.conf.gen_gps_abs_stat_features))
+
         for i in [st.course, st.speed, st.hacc, st.vacc]:
             xpoint.extend(features.generate_features(i, st.conf))
+
         xpoint.append(distance)
         xpoint.append(hcr)
         xpoint.append(sr)
         xpoint.append(trajectory)
+
         xpoint.append(month)
         xpoint.append(dayofweek)
         xpoint.append(hours)
         xpoint.append(minutes)
         xpoint.append(seconds)
+
         self.xdata = [xpoint]
+
         if st.locclf is None:
             return 'other'
         else:
