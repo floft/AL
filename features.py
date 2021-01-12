@@ -459,17 +459,23 @@ def calculate_time_and_space_features(st, dt: datetime.datetime):
 
 
 def create_point(st, dt, filename, person_stats, clusters):
-    """ Create a vector representing features for one window of sensor data.
+    """
+    Create a vector representing features for one window of sensor data.
     """
     xpoint = list()
+
     month, dayofweek, hours, minutes, seconds, distance, hcr, sr, pt_trajectory = \
         calculate_time_and_space_features(st, dt)
+
     for i in [st.yaw, st.pitch, st.roll, st.rotx, st.roty,
               st.rotz, st.accx, st.accy, st.accz, st.acctotal]:
         if st.conf.filter_data:
             i = utils.butter_lowpass_filter(i)
+
         xpoint.extend(generate_features(x=i, cf=st.conf))
+
     xpoint.extend(twod_features(st))
+
     if st.conf.local == 1:
         # Only generate statistical features for GPS points if desired:
         if st.conf.gen_gps_abs_stat_features:
@@ -478,13 +484,16 @@ def create_point(st, dt, filename, person_stats, clusters):
                 xpoint.extend(generate_features(x=i, cf=st.conf))
 
         xpoint += [distance, hcr, sr, pt_trajectory]
+
     xpoint += [month, dayofweek, hours, minutes, seconds]
+
     if st.conf.sfeatures == 1:
         xpoint += person.calculate_person_features(filename, st, person_stats, clusters)
 
     if st.conf.gpsfeatures == 1:
         if st.conf.locmodel == 1:
             newname = st.location.find_location(st.latitude[-1], st.longitude[-1])
+
             if newname is None:
                 newname = st.location.label_loc(st, distance, hcr, sr,
                                                 pt_trajectory, month, dayofweek, hours, minutes,
@@ -492,8 +501,11 @@ def create_point(st, dt, filename, person_stats, clusters):
         else:
             place = st.location.generate_gps_features(np.mean(st.latitude),
                                                       np.mean(st.longitude))
+
             newname = st.location.map_location_name(place)
+
         xpoint.extend(st.location.generate_location_features(newname))
+        
     return xpoint
 
 
