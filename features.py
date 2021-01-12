@@ -477,10 +477,12 @@ def create_point(st, dt, filename, person_stats, clusters):
     xpoint.extend(twod_features(st))
 
     if st.conf.local == 1:
-        for i in [st.latitude, st.longitude, st.altitude,
-                  st.course, st.speed, st.hacc, st.vacc]:
+        for i in [st.latitude, st.longitude, st.altitude]:
             # Only include absolute features if enabled in config:
             xpoint.extend(generate_features(x=i, cf=st.conf, include_absolute_features=st.conf.gen_gps_abs_stat_features))
+
+        for i in [st.course, st.speed, st.hacc, st.vacc]:
+            xpoint.extend(generate_features(x=i, cf=st.conf))
 
         xpoint += [distance, hcr, sr, pt_trajectory]
 
