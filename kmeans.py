@@ -30,7 +30,7 @@ class KMeans():
         for i in range(len(centers)):
             sizes[i] = len(assignments[i])
         indices = np.flip(np.argsort(sizes))
-        new_centers = centers[indices]
+        centers = centers[indices]
 
         X += X_mean
         centers += X_mean
@@ -59,10 +59,13 @@ class KMeans():
         for i in range(n_clusters):
             cluster = clusters[i]
             size = len(cluster)
+
+            totals = [0.0] * n_features
+
             for j in range(size):
-                totals = np.zeros((n_features))
                 for k in range(n_features):
                     totals[k] += cluster[j][k]
+
             for k in range(n_features):
                 if size == 0:
                     new_centers[i][k] = 0.0
