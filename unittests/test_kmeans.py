@@ -47,7 +47,7 @@ class KMeansTest(TestCase):
                 actual_value = actual_center[f_index]
                 expected_value = expected_center[f_index]
 
-                self.assertEqual(actual_value, expected_value)
+                self.assertAlmostEqual(actual_value, expected_value, places=6)
 
         # Compare centers stored on kmeans to expected:
         self.assertEqual(test_kmeans.centers.shape, expected_centers.shape)
@@ -60,6 +60,6 @@ class KMeansTest(TestCase):
                 actual_value = actual_center[f_index]
                 expected_value = expected_center[f_index]
 
-                self.assertEqual(actual_value, expected_value)
+                self.assertAlmostEqual(actual_value, expected_value, places=6)
 
         self.assertEqual(test_kmeans.n_clusters, expected_n_clusters)
