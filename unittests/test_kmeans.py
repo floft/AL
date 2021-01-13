@@ -375,6 +375,8 @@ class KMeansTest(TestCase):
         B: [ 22.13956419,  -0.53350258,  -0.30612162,   3.5244427, -1.39324011,  -4.92974363]
 
         Consequentially, we should be able to use these as the expected centers learned by our KMeans as well.
+
+        NOTE: This test may fail. Not sure yet what the exact cause is, but may just be based on the random init.
         """
 
         # arrange
@@ -423,7 +425,11 @@ class KMeansTest(TestCase):
         self.assertEqual(test_kmeans.n_clusters, expected_n_clusters)
 
     def test_fit_larger_data_100_runs(self):
-        """Run the previous test 100 times to check for variability."""
+        """
+        Run the previous test 100 times to check for variability.
+
+        NOTE: This test may fail. Not sure yet what the exact cause is, but may just be based on the random init.
+        """
 
         for i in range(100):
             self.test_fit_larger_data()
@@ -432,6 +438,8 @@ class KMeansTest(TestCase):
         """
         Repeat the original large data test above, but with only 3 clusters.
         As before, we ran SKLearn KMeans 1000 times to find the centers.
+
+        NOTE: This test may fail. Not sure yet what the exact cause is, but may just be based on the random init.
         """
 
         # arrange
