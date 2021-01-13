@@ -8,144 +8,9 @@ from kmeans import KMeans
 class KMeansTest(TestCase):
     # Testing the KMeans model
 
-    def test_fit_separated_data(self):
-        """Test the fit on well-separated data."""
-
-        # arrange
-        test_data = [
-            np.array([ 1.0,  3.0,  4.0]),  # cluster A
-            np.array([ 1.0,  3.1,  4.0]),  # cluster A
-            np.array([-1.0, -5.0,  0.0]),  # cluster B
-            np.array([-1.1, -4.9, -0.1]),  # cluster B
-            np.array([ 0.9,  2.9,  4.2]),  # cluster A
-            np.array([ 1.1,  3.0,  3.9]),  # cluster A
-            np.array([-1.0, -5.3,  0.2])   # cluster B
-        ]
-
-        test_num_clusters = 2
-
-        expected_centers = np.array([
-            [1.0, 3.0, 4.025],                      # cluster A (larger)
-            [-1.03333333, -5.06666667, 0.03333333]  # cluster B (smaller)
-        ])
-        expected_n_clusters = 2
-
-        # act
-        test_kmeans = KMeans()
-
-        output = test_kmeans.sorted_kmeans_fit(test_data, test_num_clusters)
-
-        # assert
-        # Compare returned centers to expected:
-        self.assertEqual(output.shape, expected_centers.shape)
-
-        for c_index in range(len(output)):
-            actual_center = output[c_index]
-            expected_center = expected_centers[c_index]
-
-            for f_index in range(len(actual_center)):
-                actual_value = actual_center[f_index]
-                expected_value = expected_center[f_index]
-
-                self.assertAlmostEqual(actual_value, expected_value, places=6)
-
-        # Compare centers stored on kmeans to expected:
-        self.assertEqual(test_kmeans.centers.shape, expected_centers.shape)
-
-        for c_index in range(len(test_kmeans.centers)):
-            actual_center = test_kmeans.centers[c_index]
-            expected_center = expected_centers[c_index]
-
-            for f_index in range(len(actual_center)):
-                actual_value = actual_center[f_index]
-                expected_value = expected_center[f_index]
-
-                self.assertAlmostEqual(actual_value, expected_value, places=6)
-
-        self.assertEqual(test_kmeans.n_clusters, expected_n_clusters)
-
-    def test_fit_separated_data_100_times(self):
-        """
-        Test the fit on well-separated data. Repeat 100 times to catch any bugs due to randomness (e.g. cluster
-        initialization).
-        """
-
-        for i in range(100):
-            # arrange
-            test_data = [
-                np.array([ 1.0,  3.0,  4.0]),  # cluster A
-                np.array([ 1.0,  3.1,  4.0]),  # cluster A
-                np.array([-1.0, -5.0,  0.0]),  # cluster B
-                np.array([-1.1, -4.9, -0.1]),  # cluster B
-                np.array([ 0.9,  2.9,  4.2]),  # cluster A
-                np.array([ 1.1,  3.0,  3.9]),  # cluster A
-                np.array([-1.0, -5.3,  0.2])   # cluster B
-            ]
-
-            test_num_clusters = 2
-
-            expected_centers = np.array([
-                [1.0, 3.0, 4.025],                      # cluster A (larger)
-                [-1.03333333, -5.06666667, 0.03333333]  # cluster B (smaller)
-            ])
-            expected_n_clusters = 2
-
-            # act
-            test_kmeans = KMeans()
-
-            output = test_kmeans.sorted_kmeans_fit(test_data, test_num_clusters)
-
-            # assert
-            # Compare returned centers to expected:
-            self.assertEqual(output.shape, expected_centers.shape)
-
-            for c_index in range(len(output)):
-                actual_center = output[c_index]
-                expected_center = expected_centers[c_index]
-
-                for f_index in range(len(actual_center)):
-                    actual_value = actual_center[f_index]
-                    expected_value = expected_center[f_index]
-
-                    self.assertAlmostEqual(actual_value, expected_value, places=6)
-
-            # Compare centers stored on kmeans to expected:
-            self.assertEqual(test_kmeans.centers.shape, expected_centers.shape)
-
-            for c_index in range(len(test_kmeans.centers)):
-                actual_center = test_kmeans.centers[c_index]
-                expected_center = expected_centers[c_index]
-
-                for f_index in range(len(actual_center)):
-                    actual_value = actual_center[f_index]
-                    expected_value = expected_center[f_index]
-
-                    self.assertAlmostEqual(actual_value, expected_value, places=6)
-
-            self.assertEqual(test_kmeans.n_clusters, expected_n_clusters)
-
-    def test_fit_larger_data(self):
-        """
-        Test the fit with a larger number of data points.
-        Note that the test points are random pertubations around the following means, with the given # of points:
-         - A: [ 12. ,  -3.2,   7.4,   7.5,  23.2, -12.7] (100 points)
-         - B: [22. ,  0. ,  0. ,  3.7, -1.2, -5. ] (50 points)
-         - C: [  0. ,  26. ,   4.3, -21. ,  19.7,  12.3] (75 points)
-         - D: [-100. ,   32.1,  -10.2,   -5. ,   13.3,   31.1] (55 points)
-
-        Using the SciKit K-Means with Kmeans++ init over 1000 iterations yields the following cluster centers. (These
-        centers are consistent within about 10^-25 over all 1000 iterations.) We've sorted them here based on what
-        their relative sizes should be (given number of points in each, above):
-        A: [ 12.01783259,  -3.53969932,   7.45475854,   7.71900299, 23.00537837, -12.51676054]
-        C: [  0.44777485,  25.57186705,   4.29238168, -21.41116058, 19.76324439,  12.58011386]
-        D: [-99.89645717,  32.03632508, -10.45183845,  -5.29601688, 13.30564837,  30.91902548]
-        B: [ 22.13956419,  -0.53350258,  -0.30612162,   3.5244427, -1.39324011,  -4.92974363]
-
-        Consequentially, we should be able to use these as the expected centers learned by our KMeans as well.
-        """
-
-        # arrange
-        test_data = [
+    def setUp(self) -> None:
+        # Add large data set for testing with multiple tests:
+        self.large_test_data = [
             np.array([21.10706321, 0.89717412, -1.57582408, 3.9582668, 0.14747661, -4.48933337]),
             np.array([19.13134769, -0.58915519, -2.56546829, 1.30749792, 0.61336781, -6.28298825]),
             np.array([-0.7391333, 18.63626707, 4.53578063, -27.46303431, 18.90265296, 6.80772898]),
@@ -428,6 +293,143 @@ class KMeansTest(TestCase):
             np.array([-95.66320795, 33.32312368, -11.64784422, -9.31942401, 17.44957686, 28.91950479])
         ]
 
+    def test_fit_separated_data(self):
+        """Test the fit on well-separated data."""
+
+        # arrange
+        test_data = [
+            np.array([ 1.0,  3.0,  4.0]),  # cluster A
+            np.array([ 1.0,  3.1,  4.0]),  # cluster A
+            np.array([-1.0, -5.0,  0.0]),  # cluster B
+            np.array([-1.1, -4.9, -0.1]),  # cluster B
+            np.array([ 0.9,  2.9,  4.2]),  # cluster A
+            np.array([ 1.1,  3.0,  3.9]),  # cluster A
+            np.array([-1.0, -5.3,  0.2])   # cluster B
+        ]
+
+        test_num_clusters = 2
+
+        expected_centers = np.array([
+            [1.0, 3.0, 4.025],                      # cluster A (larger)
+            [-1.03333333, -5.06666667, 0.03333333]  # cluster B (smaller)
+        ])
+        expected_n_clusters = 2
+
+        # act
+        test_kmeans = KMeans()
+
+        output = test_kmeans.sorted_kmeans_fit(test_data, test_num_clusters)
+
+        # assert
+        # Compare returned centers to expected:
+        self.assertEqual(output.shape, expected_centers.shape)
+
+        for c_index in range(len(output)):
+            actual_center = output[c_index]
+            expected_center = expected_centers[c_index]
+
+            for f_index in range(len(actual_center)):
+                actual_value = actual_center[f_index]
+                expected_value = expected_center[f_index]
+
+                self.assertAlmostEqual(actual_value, expected_value, places=6)
+
+        # Compare centers stored on kmeans to expected:
+        self.assertEqual(test_kmeans.centers.shape, expected_centers.shape)
+
+        for c_index in range(len(test_kmeans.centers)):
+            actual_center = test_kmeans.centers[c_index]
+            expected_center = expected_centers[c_index]
+
+            for f_index in range(len(actual_center)):
+                actual_value = actual_center[f_index]
+                expected_value = expected_center[f_index]
+
+                self.assertAlmostEqual(actual_value, expected_value, places=6)
+
+        self.assertEqual(test_kmeans.n_clusters, expected_n_clusters)
+
+    def test_fit_separated_data_100_times(self):
+        """
+        Test the fit on well-separated data. Repeat 100 times to catch any bugs due to randomness (e.g. cluster
+        initialization).
+        """
+
+        for i in range(100):
+            # arrange
+            test_data = [
+                np.array([ 1.0,  3.0,  4.0]),  # cluster A
+                np.array([ 1.0,  3.1,  4.0]),  # cluster A
+                np.array([-1.0, -5.0,  0.0]),  # cluster B
+                np.array([-1.1, -4.9, -0.1]),  # cluster B
+                np.array([ 0.9,  2.9,  4.2]),  # cluster A
+                np.array([ 1.1,  3.0,  3.9]),  # cluster A
+                np.array([-1.0, -5.3,  0.2])   # cluster B
+            ]
+
+            test_num_clusters = 2
+
+            expected_centers = np.array([
+                [1.0, 3.0, 4.025],                      # cluster A (larger)
+                [-1.03333333, -5.06666667, 0.03333333]  # cluster B (smaller)
+            ])
+            expected_n_clusters = 2
+
+            # act
+            test_kmeans = KMeans()
+
+            output = test_kmeans.sorted_kmeans_fit(test_data, test_num_clusters)
+
+            # assert
+            # Compare returned centers to expected:
+            self.assertEqual(output.shape, expected_centers.shape)
+
+            for c_index in range(len(output)):
+                actual_center = output[c_index]
+                expected_center = expected_centers[c_index]
+
+                for f_index in range(len(actual_center)):
+                    actual_value = actual_center[f_index]
+                    expected_value = expected_center[f_index]
+
+                    self.assertAlmostEqual(actual_value, expected_value, places=6)
+
+            # Compare centers stored on kmeans to expected:
+            self.assertEqual(test_kmeans.centers.shape, expected_centers.shape)
+
+            for c_index in range(len(test_kmeans.centers)):
+                actual_center = test_kmeans.centers[c_index]
+                expected_center = expected_centers[c_index]
+
+                for f_index in range(len(actual_center)):
+                    actual_value = actual_center[f_index]
+                    expected_value = expected_center[f_index]
+
+                    self.assertAlmostEqual(actual_value, expected_value, places=6)
+
+            self.assertEqual(test_kmeans.n_clusters, expected_n_clusters)
+
+    def test_fit_larger_data(self):
+        """
+        Test the fit with a larger number of data points.
+        Note that the test points are random pertubations around the following means, with the given # of points:
+         - A: [ 12. ,  -3.2,   7.4,   7.5,  23.2, -12.7] (100 points)
+         - B: [22. ,  0. ,  0. ,  3.7, -1.2, -5. ] (50 points)
+         - C: [  0. ,  26. ,   4.3, -21. ,  19.7,  12.3] (75 points)
+         - D: [-100. ,   32.1,  -10.2,   -5. ,   13.3,   31.1] (55 points)
+
+        Using the SciKit K-Means with Kmeans++ init over 1000 iterations yields the following cluster centers. (These
+        centers are consistent within about 10^-25 over all 1000 iterations.) We've sorted them here based on what
+        their relative sizes should be (given number of points in each, above):
+        A: [ 12.01783259,  -3.53969932,   7.45475854,   7.71900299, 23.00537837, -12.51676054]
+        C: [  0.44777485,  25.57186705,   4.29238168, -21.41116058, 19.76324439,  12.58011386]
+        D: [-99.89645717,  32.03632508, -10.45183845,  -5.29601688, 13.30564837,  30.91902548]
+        B: [ 22.13956419,  -0.53350258,  -0.30612162,   3.5244427, -1.39324011,  -4.92974363]
+
+        Consequentially, we should be able to use these as the expected centers learned by our KMeans as well.
+        """
+
+        # arrange
         test_num_clusters = 4
 
         expected_centers = np.array([
@@ -441,7 +443,7 @@ class KMeansTest(TestCase):
         # act
         test_kmeans = KMeans()
 
-        output = test_kmeans.sorted_kmeans_fit(test_data, test_num_clusters)
+        output = test_kmeans.sorted_kmeans_fit(self.large_test_data, test_num_clusters)
 
         # assert
         # Compare returned centers to expected:
