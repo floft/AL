@@ -550,3 +550,43 @@ class KMeansTest(TestCase):
             expected_value = expected_output[i]
 
             self.assertEqual(actual_value, expected_value)
+
+    def test_kmeans_predict_large_data(self):
+        """Run prediction using the 3-cluster test from earlier on the large data."""
+
+        # arrange
+        # From previous 3-cluster fit result:
+        test_centers = np.array([
+            [15.39174312, -2.53763374, 4.86779849, 6.32081623, 14.87250554, -9.9877549],      # A + B (150 points)
+            [0.44777485, 25.57186705, 4.29238168, -21.41116058, 19.76324439, 12.58011386],    # C (75 points)
+            [-99.89645717, 32.03632508, -10.45183845, -5.29601688, 13.30564837, 30.91902548]  # D (55 points)
+        ])
+
+        # Generated using SKLearn K-means fit used for above tests:
+        expected_output = np.array([0, 0, 1, 0, 1, 2, 0, 1, 1, 2, 1, 0, 1, 2, 2, 1, 2, 1, 2, 2, 0, 0,
+                                    0, 0, 1, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+                                    2, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 2, 0, 0, 1, 0, 2, 0, 0, 0, 2, 1,
+                                    0, 0, 1, 1, 1, 0, 0, 0, 2, 0, 0, 2, 0, 1, 1, 0, 2, 0, 1, 0, 0, 1,
+                                    0, 0, 2, 0, 2, 2, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1,
+                                    0, 0, 2, 0, 2, 2, 2, 0, 1, 0, 0, 2, 1, 0, 0, 0, 0, 0, 1, 2, 0, 0,
+                                    0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 2, 0, 0, 1, 1,
+                                    2, 2, 0, 0, 1, 0, 2, 0, 0, 1, 1, 1, 1, 0, 0, 2, 0, 1, 2, 0, 2, 2,
+                                    0, 1, 0, 0, 0, 2, 0, 0, 1, 1, 0, 2, 1, 0, 2, 1, 0, 1, 0, 2, 1, 1,
+                                    0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 2, 2, 0, 1, 1, 0, 0, 1, 0, 1, 0, 2,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 1, 2, 1, 2, 1, 1, 0, 1, 0, 0, 1,
+                                    1, 2, 0, 0, 2, 1, 0, 0, 2, 0, 0, 0, 0, 2, 1, 1, 0, 0, 2, 0, 1, 0,
+                                    0, 1, 1, 0, 2, 0, 2, 1, 0, 0, 0, 0, 1, 2, 2, 2])
+
+        # act
+        test_kmeans = KMeans()
+
+        output = test_kmeans.sorted_kmeans_predict(self.large_test_data, test_centers)
+
+        # assert
+        self.assertEqual(output.shape, expected_output.shape)
+
+        for i in range(len(output)):
+            actual_value = output[i]
+            expected_value = expected_output[i]
+
+            self.assertEqual(actual_value, expected_value)
