@@ -479,3 +479,53 @@ class KMeansTest(TestCase):
 
         for i in range(100):
             self.test_fit_larger_data()
+
+    def test_fit_larger_data_3_clusters(self):
+        """
+        Repeat the original large data test above, but with only 3 clusters.
+        As before, we ran SKLearn KMeans 1000 times to find the centers.
+        """
+
+        # arrange
+        test_num_clusters = 3
+
+        expected_centers = np.array([
+            [15.39174312, -2.53763374, 4.86779849, 6.32081623, 14.87250554, -9.9877549],      # A + B (150 points)
+            [0.44777485, 25.57186705, 4.29238168, -21.41116058, 19.76324439, 12.58011386],    # C (75 points)
+            [-99.89645717, 32.03632508, -10.45183845, -5.29601688, 13.30564837, 30.91902548]  # D (55 points)
+        ])
+        expected_n_clusters = 3
+
+        # act
+        test_kmeans = KMeans()
+
+        output = test_kmeans.sorted_kmeans_fit(self.large_test_data, test_num_clusters)
+
+        # assert
+        # Compare returned centers to expected:
+        self.assertEqual(output.shape, expected_centers.shape)
+
+        for c_index in range(len(output)):
+            actual_center = output[c_index]
+            expected_center = expected_centers[c_index]
+
+            for f_index in range(len(actual_center)):
+                actual_value = actual_center[f_index]
+                expected_value = expected_center[f_index]
+
+                self.assertAlmostEqual(actual_value, expected_value, places=6)
+
+        # Compare centers stored on kmeans to expected:
+        self.assertEqual(test_kmeans.centers.shape, expected_centers.shape)
+
+        for c_index in range(len(test_kmeans.centers)):
+            actual_center = test_kmeans.centers[c_index]
+            expected_center = expected_centers[c_index]
+
+            for f_index in range(len(actual_center)):
+                actual_value = actual_center[f_index]
+                expected_value = expected_center[f_index]
+
+                self.assertAlmostEqual(actual_value, expected_value, places=6)
+
+        self.assertEqual(test_kmeans.n_clusters, expected_n_clusters)
