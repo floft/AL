@@ -137,40 +137,57 @@ class KMeans():
         center_id = np.random.randint(n_samples)  # pick first center randomly
 
         indices = np.full(n_samples, -1, dtype=int)
-        centers[0] = X[center_id]
-        indices[0] = 1
+        centers[0] = X[center_id]  # store chosen point as first center
+        indices[center_id] = 1  # mark that point's index as 1 to show it's been used
 
         # create list of squared distances between points and closest centers
         closest_dist_sq = np.zeros((n_samples))
         for i in range(len(X)):
-            ds, di = self.nearest_distance(X[i], centers)
+            ds, di = self.nearest_distance(X[i], centers[0:1])  # only compute against this first center
             ds *= ds
             closest_dist_sq[i] = ds
         total = closest_dist_sq.sum()
 
-        # pick remaining n_clusters-1 points by sampling with probability
-        # proportional to squared distance to closest center
+        # Pick remaining n_clusters-1 points by sampling with probability
+        # proportional to squared distance to closest center.
+        # We do this by picking a threshold in [0, total) randomly. Then,
+        # iterate through the points and add their squared distances from
+        # existing centers, until we go over the threshold. If the point
+        # that pushed it over the threshold is not already used, make it
+        # the next center. (Comparing cumulative against a threshold has
+        # the effect of making the larger-distance points more likely
+        # to be chosen as they will raise the cumulative value further.)
+        # If we do not cross the threshold, randomly pick an unused point
+        # as the next center.
         for c in range(1, n_clusters):
             chosen_threshold = np.random.uniform(total)
             cum = 0
             found = False
             for i in range(n_samples):
                 cum += closest_dist_sq[i]
-                if total < chosen_threshold and indices[i] != 1:
-                    centers[c] = X[c]
+                if cum >= chosen_threshold and indices[i] != 1:
+                    centers[c] = X[i]
                     indices[i] = 1
                     found = True
                     break
-            if found == False:
+
+            # If we didn't find a point, randomly choose an unused one:
+            while not found:
                 chosen_point = np.random.randint(n_samples)
-                centers[c] = X[c]
-                indices[chosen_point] = 1
+
+                # Only use this point if it hasn't already been used:
+                if indices[chosen_point] != 1:
+                    centers[c] = X[chosen_point]
+                    indices[chosen_point] = 1
+
+                    found = True
+
             # create list of squared distances between points and closest centers
             closest_dist_sq = np.zeros((n_samples))
             for i in range(len(X)):
-                ds, di = self.nearest_distance(X[i], centers)
+                ds, di = self.nearest_distance(X[i], centers[0:c+1])  # compare against already-chosen centers
                 ds *= ds
                 closest_dist_sq[i] = ds
             total = closest_dist_sq.sum()
 
-            return centers
+        return centers
