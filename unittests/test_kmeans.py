@@ -477,3 +477,76 @@ class KMeansTest(TestCase):
                 self.assertAlmostEqual(actual_value, expected_value, places=6)
 
         self.assertEqual(test_kmeans.n_clusters, expected_n_clusters)
+
+    def test_kmeans_predict_spread_out(self):
+        """
+        Test predicting cluster of relatively spread-out data points, using centers from first test.
+        """
+
+        # arrange
+        # Test data is 10 points around [1.0, 3.0, 4.0], then 10 around [-1.0, -5.0, 0.0]
+        test_data = [
+            np.array([0.59502503, 2.93853518, 3.92665024]),
+            np.array([1.56350025, 3.11147546, 5.02235095]),
+            np.array([0.985042, 3.32465998, 2.92107992]),
+            np.array([1.47863926, 3.16849915, 3.63236661]),
+            np.array([0.76310593, 2.85090404, 3.52053754]),
+            np.array([0.5325147, 3.2473839, 3.99493572]),
+            np.array([1.47285268, 3.11158601, 3.09612582]),
+            np.array([0.89848385, 2.47090131, 4.30783622]),
+            np.array([0.94689814, 3.54121233, 3.55144982]),
+            np.array([0.51633148, 3.59166248, 3.65875335]),
+            np.array([-1.13844203, -4.1379935, 0.95236739]),
+            np.array([-1.10655832, -4.22839025, 0.33853854]),
+            np.array([-1.25940745, -4.59524502, 0.2006862]),
+            np.array([-0.68189981, -4.94028891, 0.04290731]),
+            np.array([-1.24062676, -4.81273109, 0.5861373]),
+            np.array([-0.78907316, -6.0082733, 0.04518856]),
+            np.array([-0.49955969, -4.71232819, -0.33591087]),
+            np.array([-1.71292959, -4.7340269, -0.84494996]),
+            np.array([-0.95782593, -5.2394523, 0.46036315]),
+            np.array([-1.55543817, -5.72755686, 0.20253697])
+        ]
+
+        test_centers = np.array([
+            [1.0, 3.0, 4.025],                      # cluster A (larger)
+            [-1.03333333, -5.06666667, 0.03333333]  # cluster B (smaller)
+        ])
+
+        # First 10 points go into cluster 0, second 10 go into cluster 1
+        expected_output = np.array([
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+        ])
+
+        # act
+        test_kmeans = KMeans()
+
+        output = test_kmeans.sorted_kmeans_predict(test_data, test_centers)
+
+        # assert
+        self.assertEqual(output.shape, expected_output.shape)
+
+        for i in range(len(output)):
+            actual_value = output[i]
+            expected_value = expected_output[i]
+
+            self.assertEqual(actual_value, expected_value)
