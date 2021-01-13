@@ -472,7 +472,8 @@ class KMeansTest(TestCase):
 
         self.assertEqual(test_kmeans.n_clusters, expected_n_clusters)
 
-    # ADD TEST WITH LARGER NUMBER OF CLUSTERS
-    # CAN MAYBE RUN WITH K-MEANS FROM SCIKIT AND COMPARE AGAINST THAT
+    def test_fit_larger_data_100_runs(self):
+        """Run the previous test 100 times to check for variability."""
 
-
+        for i in range(100):
+            self.test_fit_larger_data()
