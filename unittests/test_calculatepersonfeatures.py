@@ -1,8 +1,9 @@
 from unittest import TestCase
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 
+import kmeans
 from person import calculate_person_features
 
 
@@ -12,7 +13,19 @@ class CalculatePersonFeaturesTest(TestCase):
     # NOTE: These tests reflect the way the function currently works (returning the cluster index values)
     # We will want to adapt these to our intended ordered ranking (see issue #16 on GitHub)
 
-    def test_calculatepersonfeatures_normaldata_1(self):
+    def setUp(self) -> None:
+        # List of values for the kmeans predict function to return:
+        # Note that, since numseconds = 5, we will only use the first 5 location points to predict
+        self.sorted_kmeans_predict_values = [
+            np.array([1, 0, 0, 0, 0]),
+            np.array([1, 0, 0, 2, 2]),
+            np.array([2, 1, 1, 2, 2]),
+            np.array([1, 1, 1, 1, 1]),
+            np.array([2, 2, 2, 1, 0])
+        ]
+
+    @patch.object(kmeans.KMeans, 'sorted_kmeans_predict')
+    def test_calculatepersonfeatures_normaldata_1(self, mock_kmeans_predict):
         # arrange
         test_infile = None
         test_al = MagicMock()
@@ -40,17 +53,24 @@ class CalculatePersonFeaturesTest(TestCase):
             12.0     # spanlong
         ])
 
-        # Mock up the clusters and set their predict() return values:
-        # Note that, since numseconds = 5, we will only use the first 5 location points to predict
-        test_clusters = [MagicMock() for _ in range(test_conf.num_hour_clusters)]
-        test_clusters[0].predict.return_value = np.array([1, 0, 0, 0, 0])
-        test_clusters[1].predict.return_value = np.array([1, 0, 0, 2, 2])
-        test_clusters[2].predict.return_value = np.array([2, 1, 1, 2, 2])
-        test_clusters[3].predict.return_value = np.array([1, 1, 1, 1, 1])
-        test_clusters[4].predict.return_value = np.array([2, 2, 2, 1, 0])
+        # Use placeholder cluster centers, and mock the predict return values:
+        # Test clusters (centers) are 5 (3, 3) arrays (3 centers for each group):
+        test_clusters = [
+            np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
+            np.array([[4, 4, 4], [5, 5, 5], [6, 6, 6]]),
+            np.array([[7, 7, 7], [8, 8, 8], [9, 9, 9]]),
+            np.array([[10, 10, 10], [11, 11, 11], [12, 12, 12]]),
+            np.array([[13, 13, 13], [14, 14, 14], [15, 15, 15]])
+        ]
+
+        # Make kmeans return the set values when called, in order:
+        mock_kmeans_predict.side_effect = self.sorted_kmeans_predict_values
 
         expected_output = [
             0.07186009116853918,  # distance value
+
+            -0.9044338400425644,  # difference from meanlat
+            0.23386730372315867,  # difference from meanlong
 
             # most common cluster indices:
             0,

@@ -2,8 +2,8 @@ from unittest import TestCase
 from unittest.mock import patch, Mock
 
 import numpy as np
-from sklearn.cluster import KMeans
 
+import kmeans
 from al import AL, extract_features
 from config import Config
 
@@ -45,12 +45,13 @@ class ExtractFeaturesTest(TestCase):
         test_data_basename = 'extract_features_1'
 
         # Override the load_clusters function to load mock clusters:
-        test_clusters = [Mock(spec=KMeans) for _ in range(5)]
-        test_clusters[0].predict.return_value = np.array([1, 0, 0, 0, 0])
-        test_clusters[1].predict.return_value = np.array([1, 0, 0, 2, 2])
-        test_clusters[2].predict.return_value = np.array([2, 1, 1, 2, 2])
-        test_clusters[3].predict.return_value = np.array([1, 1, 1, 1, 1])
-        test_clusters[4].predict.return_value = np.array([2, 2, 2, 1, 0])
+        test_clusters = [
+            np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
+            np.array([[4, 4, 4], [5, 5, 5], [6, 6, 6]]),
+            np.array([[7, 7, 7], [8, 8, 8], [9, 9, 9]]),
+            np.array([[10, 10, 10], [11, 11, 11], [12, 12, 12]]),
+            np.array([[13, 13, 13], [14, 14, 14], [15, 15, 15]])
+        ]
 
         load_clusters_mock.return_value = test_clusters
 
@@ -176,8 +177,10 @@ class ExtractFeaturesTest(TestCase):
 
         self.assertEqual(actual_y_data, expected_y_data)
 
+    @patch.object(kmeans.KMeans, 'sorted_kmeans_predict')
     @patch('features.load_clusters')
-    def test_extractfeatures_withpersonfeatures_withabsolutegpsstatisticalfeatures(self, load_clusters_mock):
+    def test_extractfeatures_withpersonfeatures_withabsolutegpsstatisticalfeatures(self, load_clusters_mock,
+                                                                                   mock_kmeans_predict):
         """
         Test extract_features with lowpass filtering off but person and location features on.
         Also enable absolute GPS statistical features.
@@ -207,14 +210,38 @@ class ExtractFeaturesTest(TestCase):
         test_data_basename = 'extract_features_1'
 
         # Override the load_clusters function to load mock clusters:
-        test_clusters = [Mock(spec=KMeans) for _ in range(5)]
-        test_clusters[0].predict.return_value = np.array([1, 0, 0, 0, 0])
-        test_clusters[1].predict.return_value = np.array([1, 0, 0, 2, 2])
-        test_clusters[2].predict.return_value = np.array([2, 1, 1, 2, 2])
-        test_clusters[3].predict.return_value = np.array([1, 1, 1, 1, 1])
-        test_clusters[4].predict.return_value = np.array([2, 2, 2, 1, 0])
+        test_clusters = [
+            np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
+            np.array([[4, 4, 4], [5, 5, 5], [6, 6, 6]]),
+            np.array([[7, 7, 7], [8, 8, 8], [9, 9, 9]]),
+            np.array([[10, 10, 10], [11, 11, 11], [12, 12, 12]]),
+            np.array([[13, 13, 13], [14, 14, 14], [15, 15, 15]])
+        ]
 
         load_clusters_mock.return_value = test_clusters
+
+        # Set up the values returned by the kmeans predict (patch) (repeat the same 5 outputs):
+        sorted_kmeans_predict_values = [
+            np.array([1, 0, 0, 0, 0]),
+            np.array([1, 0, 0, 2, 2]),
+            np.array([2, 1, 1, 2, 2]),
+            np.array([1, 1, 1, 1, 1]),
+            np.array([2, 2, 2, 1, 0]),
+
+            np.array([1, 0, 0, 0, 0]),
+            np.array([1, 0, 0, 2, 2]),
+            np.array([2, 1, 1, 2, 2]),
+            np.array([1, 1, 1, 1, 1]),
+            np.array([2, 2, 2, 1, 0]),
+
+            np.array([1, 0, 0, 0, 0]),
+            np.array([1, 0, 0, 2, 2]),
+            np.array([2, 1, 1, 2, 2]),
+            np.array([1, 1, 1, 1, 1]),
+            np.array([2, 2, 2, 1, 0])
+        ]
+
+        mock_kmeans_predict.side_effect = sorted_kmeans_predict_values
 
         expected_x_data = [
             [
@@ -248,7 +275,7 @@ class ExtractFeaturesTest(TestCase):
 
                 6, 1, 15, 943, 56600,
 
-                0.0, 0, 0, 2, 1, 2,
+                0.0, 0.0, 0.0, 0, 0, 2, 1, 2,
 
                 0, 1, 0, 0
             ],
@@ -282,7 +309,7 @@ class ExtractFeaturesTest(TestCase):
 
                 6, 1, 15, 943, 56604,
 
-                0.0, 0, 0, 2, 1, 2,
+                0.0, 0.0, 0.0, 0, 0, 2, 1, 2,
 
                 0, 1, 0, 0
             ],
@@ -316,7 +343,7 @@ class ExtractFeaturesTest(TestCase):
 
                 6, 1, 15, 943, 56609,
 
-                0.0, 0, 0, 2, 1, 2,
+                0.0, 0.0, 0.0, 0, 0, 2, 1, 2,
 
                 0, 1, 0, 0
             ]
@@ -345,8 +372,10 @@ class ExtractFeaturesTest(TestCase):
 
         self.assertEqual(actual_y_data, expected_y_data)
 
+    @patch.object(kmeans.KMeans, 'sorted_kmeans_predict')
     @patch('features.load_clusters')
-    def test_extractfeatures_withpersonfeatures_noabsolutegpsstatisticalfeatures(self, load_clusters_mock):
+    def test_extractfeatures_withpersonfeatures_noabsolutegpsstatisticalfeatures(self, load_clusters_mock,
+                                                                                 mock_kmeans_predict):
         """
         Test extract_features with lowpass filtering off but person and location features on.
         Also DISABLE absolute GPS statistical features.
@@ -376,14 +405,38 @@ class ExtractFeaturesTest(TestCase):
         test_data_basename = 'extract_features_1'
 
         # Override the load_clusters function to load mock clusters:
-        test_clusters = [Mock(spec=KMeans) for _ in range(5)]
-        test_clusters[0].predict.return_value = np.array([1, 0, 0, 0, 0])
-        test_clusters[1].predict.return_value = np.array([1, 0, 0, 2, 2])
-        test_clusters[2].predict.return_value = np.array([2, 1, 1, 2, 2])
-        test_clusters[3].predict.return_value = np.array([1, 1, 1, 1, 1])
-        test_clusters[4].predict.return_value = np.array([2, 2, 2, 1, 0])
+        test_clusters = [
+            np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
+            np.array([[4, 4, 4], [5, 5, 5], [6, 6, 6]]),
+            np.array([[7, 7, 7], [8, 8, 8], [9, 9, 9]]),
+            np.array([[10, 10, 10], [11, 11, 11], [12, 12, 12]]),
+            np.array([[13, 13, 13], [14, 14, 14], [15, 15, 15]])
+        ]
 
         load_clusters_mock.return_value = test_clusters
+
+        # Set up the values returned by the kmeans predict (patch) (repeat the same 5 outputs):
+        sorted_kmeans_predict_values = [
+            np.array([1, 0, 0, 0, 0]),
+            np.array([1, 0, 0, 2, 2]),
+            np.array([2, 1, 1, 2, 2]),
+            np.array([1, 1, 1, 1, 1]),
+            np.array([2, 2, 2, 1, 0]),
+
+            np.array([1, 0, 0, 0, 0]),
+            np.array([1, 0, 0, 2, 2]),
+            np.array([2, 1, 1, 2, 2]),
+            np.array([1, 1, 1, 1, 1]),
+            np.array([2, 2, 2, 1, 0]),
+
+            np.array([1, 0, 0, 0, 0]),
+            np.array([1, 0, 0, 2, 2]),
+            np.array([2, 1, 1, 2, 2]),
+            np.array([1, 1, 1, 1, 1]),
+            np.array([2, 2, 2, 1, 0])
+        ]
+
+        mock_kmeans_predict.side_effect = sorted_kmeans_predict_values
 
         expected_x_data = [
             [
@@ -417,7 +470,7 @@ class ExtractFeaturesTest(TestCase):
 
                 6, 1, 15, 943, 56600,
 
-                0.0, 0, 0, 2, 1, 2,
+                0.0, 0.0, 0.0, 0, 0, 2, 1, 2,
 
                 0, 1, 0, 0
             ],
@@ -451,7 +504,7 @@ class ExtractFeaturesTest(TestCase):
 
                 6, 1, 15, 943, 56604,
 
-                0.0, 0, 0, 2, 1, 2,
+                0.0, 0.0, 0.0, 0, 0, 2, 1, 2,
 
                 0, 1, 0, 0
             ],
@@ -485,7 +538,7 @@ class ExtractFeaturesTest(TestCase):
 
                 6, 1, 15, 943, 56609,
 
-                0.0, 0, 0, 2, 1, 2,
+                0.0, 0.0, 0.0, 0, 0, 2, 1, 2,
 
                 0, 1, 0, 0
             ]
