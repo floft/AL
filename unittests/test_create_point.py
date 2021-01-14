@@ -1,10 +1,10 @@
 from datetime import datetime
 from unittest import TestCase
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
-from sklearn.cluster import KMeans
 
+import kmeans
 from al import AL
 from config import Config
 from features import create_point
@@ -67,7 +67,13 @@ class CreatePointTest(TestCase):
 
         test_filename = Mock(spec=str)
         test_person_stats = Mock(spec=np.ndarray)
-        test_clusters = [Mock(spec=KMeans) for _ in range(5)]
+        test_clusters = [
+            np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
+            np.array([[4, 4, 4], [5, 5, 5], [6, 6, 6]]),
+            np.array([[7, 7, 7], [8, 8, 8], [9, 9, 9]]),
+            np.array([[10, 10, 10], [11, 11, 11], [12, 12, 12]]),
+            np.array([[13, 13, 13], [14, 14, 14], [15, 15, 15]])
+        ]
 
         expected_output = [
             # statistical features for motion:
@@ -168,7 +174,13 @@ class CreatePointTest(TestCase):
 
         test_filename = Mock(spec=str)
         test_person_stats = Mock(spec=np.ndarray)
-        test_clusters = [Mock(spec=KMeans) for _ in range(5)]
+        test_clusters = [
+            np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
+            np.array([[4, 4, 4], [5, 5, 5], [6, 6, 6]]),
+            np.array([[7, 7, 7], [8, 8, 8], [9, 9, 9]]),
+            np.array([[10, 10, 10], [11, 11, 11], [12, 12, 12]]),
+            np.array([[13, 13, 13], [14, 14, 14], [15, 15, 15]])
+        ]
 
         expected_output = [
             # statistical features for motion:
@@ -219,7 +231,8 @@ class CreatePointTest(TestCase):
         # assert
         self.assertEqual(output, expected_output)
 
-    def test_create_point_nofilter_withperson_nogpsfeatures(self):
+    @patch.object(kmeans.KMeans, 'sorted_kmeans_predict')
+    def test_create_point_nofilter_withperson_nogpsfeatures(self, mock_kmeans_predict):
         """Test with no lowpass filtering and no gps features, but with person features."""
 
         # arrange
@@ -272,12 +285,24 @@ class CreatePointTest(TestCase):
 
         test_filename = Mock(spec=str)
         test_person_stats = np.array([-1.0, 46.5, -116.0, -1.0, 1.0, 12.0])
-        test_clusters = [Mock(spec=KMeans) for _ in range(5)]
-        test_clusters[0].predict.return_value = np.array([1, 0, 0, 0, 0])
-        test_clusters[1].predict.return_value = np.array([1, 0, 0, 2, 2])
-        test_clusters[2].predict.return_value = np.array([2, 1, 1, 2, 2])
-        test_clusters[3].predict.return_value = np.array([1, 1, 1, 1, 1])
-        test_clusters[4].predict.return_value = np.array([2, 2, 2, 1, 0])
+        test_clusters = [
+            np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
+            np.array([[4, 4, 4], [5, 5, 5], [6, 6, 6]]),
+            np.array([[7, 7, 7], [8, 8, 8], [9, 9, 9]]),
+            np.array([[10, 10, 10], [11, 11, 11], [12, 12, 12]]),
+            np.array([[13, 13, 13], [14, 14, 14], [15, 15, 15]])
+        ]
+
+        # Set up the values returned by the kmeans predict (patch):
+        sorted_kmeans_predict_values = [
+            np.array([1, 0, 0, 0, 0]),
+            np.array([1, 0, 0, 2, 2]),
+            np.array([2, 1, 1, 2, 2]),
+            np.array([1, 1, 1, 1, 1]),
+            np.array([2, 2, 2, 1, 0])
+        ]
+
+        mock_kmeans_predict.side_effect = sorted_kmeans_predict_values
 
         expected_output = [
             # statistical features for motion:
@@ -338,7 +363,8 @@ class CreatePointTest(TestCase):
         # assert
         self.assertEqual(output, expected_output)
 
-    def test_create_point_nofilter_withperson_withgpsfeatures(self):
+    @patch.object(kmeans.KMeans, 'sorted_kmeans_predict')
+    def test_create_point_nofilter_withperson_withgpsfeatures(self, mock_kmeans_predict):
         """Test with no lowpass filtering but with person and non-model GPS features."""
 
         # arrange
@@ -400,12 +426,24 @@ class CreatePointTest(TestCase):
 
         test_filename = Mock(spec=str)
         test_person_stats = np.array([-1.0, 46.5, -116.0, -1.0, 1.0, 12.0])
-        test_clusters = [Mock(spec=KMeans) for _ in range(5)]
-        test_clusters[0].predict.return_value = np.array([1, 0, 0, 0, 0])
-        test_clusters[1].predict.return_value = np.array([1, 0, 0, 2, 2])
-        test_clusters[2].predict.return_value = np.array([2, 1, 1, 2, 2])
-        test_clusters[3].predict.return_value = np.array([1, 1, 1, 1, 1])
-        test_clusters[4].predict.return_value = np.array([2, 2, 2, 1, 0])
+        test_clusters = [
+            np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
+            np.array([[4, 4, 4], [5, 5, 5], [6, 6, 6]]),
+            np.array([[7, 7, 7], [8, 8, 8], [9, 9, 9]]),
+            np.array([[10, 10, 10], [11, 11, 11], [12, 12, 12]]),
+            np.array([[13, 13, 13], [14, 14, 14], [15, 15, 15]])
+        ]
+
+        # Set up the values returned by the kmeans predict (patch):
+        sorted_kmeans_predict_values = [
+            np.array([1, 0, 0, 0, 0]),
+            np.array([1, 0, 0, 2, 2]),
+            np.array([2, 1, 1, 2, 2]),
+            np.array([1, 1, 1, 1, 1]),
+            np.array([2, 2, 2, 1, 0])
+        ]
+
+        mock_kmeans_predict.side_effect = sorted_kmeans_predict_values
 
         expected_generate_gps_features_args = (45.556713987256174, -115.57706709612395)
         expected_map_location_name_args = ('motorway', )
@@ -528,7 +566,13 @@ class CreatePointTest(TestCase):
 
         test_filename = Mock(spec=str)
         test_person_stats = Mock(spec=np.ndarray)
-        test_clusters = [Mock(spec=KMeans) for _ in range(5)]
+        test_clusters = [
+            np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
+            np.array([[4, 4, 4], [5, 5, 5], [6, 6, 6]]),
+            np.array([[7, 7, 7], [8, 8, 8], [9, 9, 9]]),
+            np.array([[10, 10, 10], [11, 11, 11], [12, 12, 12]]),
+            np.array([[13, 13, 13], [14, 14, 14], [15, 15, 15]])
+        ]
 
         expected_output = [
             # statistical features for motion:
@@ -579,7 +623,8 @@ class CreatePointTest(TestCase):
         # assert
         self.assertEqual(output, expected_output)
 
-    def test_create_point_nofilter_withperson_nogpssensorabsolutefeature_withgpsfeatures(self):
+    @patch.object(kmeans.KMeans, 'sorted_kmeans_predict')
+    def test_create_point_nofilter_withperson_nogpssensorabsolutefeature_withgpsfeatures(self, mock_kmeans_predict):
         """Test with no lowpass filtering but with person and non-model GPS (location) features.
         Also disable GPS sensor absolute statistical features."""
 
@@ -642,12 +687,24 @@ class CreatePointTest(TestCase):
 
         test_filename = Mock(spec=str)
         test_person_stats = np.array([-1.0, 46.5, -116.0, -1.0, 1.0, 12.0])
-        test_clusters = [Mock(spec=KMeans) for _ in range(5)]
-        test_clusters[0].predict.return_value = np.array([1, 0, 0, 0, 0])
-        test_clusters[1].predict.return_value = np.array([1, 0, 0, 2, 2])
-        test_clusters[2].predict.return_value = np.array([2, 1, 1, 2, 2])
-        test_clusters[3].predict.return_value = np.array([1, 1, 1, 1, 1])
-        test_clusters[4].predict.return_value = np.array([2, 2, 2, 1, 0])
+        test_clusters = [
+            np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
+            np.array([[4, 4, 4], [5, 5, 5], [6, 6, 6]]),
+            np.array([[7, 7, 7], [8, 8, 8], [9, 9, 9]]),
+            np.array([[10, 10, 10], [11, 11, 11], [12, 12, 12]]),
+            np.array([[13, 13, 13], [14, 14, 14], [15, 15, 15]])
+        ]
+
+        # Set up the values returned by the kmeans predict (patch):
+        sorted_kmeans_predict_values = [
+            np.array([1, 0, 0, 0, 0]),
+            np.array([1, 0, 0, 2, 2]),
+            np.array([2, 1, 1, 2, 2]),
+            np.array([1, 1, 1, 1, 1]),
+            np.array([2, 2, 2, 1, 0])
+        ]
+
+        mock_kmeans_predict.side_effect = sorted_kmeans_predict_values
 
         expected_generate_gps_features_args = (45.556713987256174, -115.57706709612395)
         expected_map_location_name_args = ('motorway', )
