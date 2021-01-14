@@ -60,7 +60,7 @@ class KMeans():
             cluster = clusters[i]
             size = len(cluster)
 
-            totals = [0.0] * n_features
+            totals = np.zeros(n_features)
 
             for j in range(size):
                 for k in range(n_features):
@@ -171,16 +171,11 @@ class KMeans():
                     found = True
                     break
 
-            # If we didn't find a point, randomly choose an unused one:
-            while not found:
+            # If we didn't find a point, randomly choose one:
+            if not found:
                 chosen_point = np.random.randint(n_samples)
-
-                # Only use this point if it hasn't already been used:
-                if indices[chosen_point] != 1:
-                    centers[c] = X[chosen_point]
-                    indices[chosen_point] = 1
-
-                    found = True
+                centers[c] = X[chosen_point]
+                indices[chosen_point] = 1
 
             # create list of squared distances between points and closest centers
             closest_dist_sq = np.zeros((n_samples))
