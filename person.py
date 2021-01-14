@@ -9,14 +9,13 @@
 
 
 import os
-import sys
 from collections import Counter
 
 import joblib
 import numpy as np
-from sklearn.cluster import KMeans
 
 import config
+import kmeans
 import utils
 import warnings
 
@@ -72,7 +71,9 @@ def calculate_person_features(feat_infile, al, person_stats, oc_clusters):
         size = min(al.conf.numseconds, len(al.latitude))
         for j in range(size):
             array.append((al.latitude[j], al.longitude[j], al.altitude[j]))
-        labels = oc_clusters[i].predict(array)
+
+        km = kmeans.KMeans()
+        labels = km.sorted_kmeans_predict(array, oc_clusters[i])
         results.append(most_common(labels))
     return results
 
@@ -129,10 +130,13 @@ def hour_cluster(base_filename, latitude, longitude, altitude,
             locs.append(new)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        kmeans = KMeans(n_clusters=numclusters).fit(locs)
+
+        km = kmeans.KMeans()
+        km.sorted_kmeans_fit(locs, numclusters)
+
     filename = os.path.join(cf.clusterpath, '{}.{}'.format(base_filename, cluster_num))
-    joblib.dump(kmeans, filename)
-    return np.ndarray.flatten(kmeans.cluster_centers_)
+    joblib.dump(km.centers, filename)
+    return np.ndarray.flatten(km.centers)
 
 
 def generate_person_stats(base_filename, cf: config.Config):
