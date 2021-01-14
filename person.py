@@ -60,8 +60,13 @@ def calculate_person_features(feat_infile, al, person_stats, oc_clusters):
     spanlong = person_stats[-1]
     meanlat = person_stats[-5]
     meanlong = person_stats[-4]
+
     results.append(calculate_distance(spanlat, spanlong, meanlat, meanlong,
                                       np.mean(al.latitude), np.mean(al.longitude)))
+
+    results.append(np.mean(al.latitude) - meanlat)
+    results.append(np.mean(al.longitude) - meanlong)
+
     for i in range(al.conf.num_hour_clusters):
         array = list()
         size = min(al.conf.numseconds, len(al.latitude))
