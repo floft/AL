@@ -323,6 +323,8 @@ class CreatePointTest(TestCase):
 
             # person features:
             0.07952003740709544,  # distance value
+            -0.9432860127438261,  # difference from meanlat
+            0.42293290387604543,  # difference from meanlong
             0,  # most common cluster indices
             0,
             2,
@@ -453,6 +455,8 @@ class CreatePointTest(TestCase):
 
             # person features:
             0.07952003740709544,  # distance value
+            -0.9432860127438261,  # difference from meanlat
+            0.42293290387604543,  # difference from meanlong
             0,  # most common cluster indices
             0,
             2,
@@ -693,6 +697,8 @@ class CreatePointTest(TestCase):
 
             # person features:
             0.07952003740709544,  # distance value
+            -0.9432860127438261,  # difference from meanlat
+            0.42293290387604543,  # difference from meanlong
             0,  # most common cluster indices
             0,
             2,

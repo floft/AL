@@ -52,6 +52,9 @@ class CalculatePersonFeaturesTest(TestCase):
         expected_output = [
             0.07186009116853918,  # distance value
 
+            -0.9044338400425644,  # difference from meanlat
+            0.23386730372315867,  # difference from meanlong
+
             # most common cluster indices:
             0,
             0,
