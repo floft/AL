@@ -68,7 +68,7 @@ class Config:
         self.local = 1  # Use the local GPS values
         self.gen_gps_abs_stat_features = False  # Generate "absolute" statistical features for GPS sensors
         self.cv = 3  # cross validation number of folds
-        self.annotate = 1  # label new data from learned model
+        self.annotate = 0  # label new data from learned model
         self.extension = '.instances'  # filename extension for training data
         self.datapath = './data/'  # directory containing files of sensor data
         self.modelpath = './models/'  # directory containing trained models
