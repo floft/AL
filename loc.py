@@ -27,6 +27,7 @@ import config
 import features
 import gps
 import utils
+from mobiledata import MobileData
 
 
 class Location:
@@ -310,11 +311,10 @@ class Location:
     def extract_features(self, base_filename):
         """ Extract a feature vector that will be input to a location classifier.
         """
-        fs1 = list()
-        fs2 = list()
 
         infile = os.path.join(self.conf.datapath, base_filename + self.conf.extension)
-        features_datafile = open(infile, "r")  # process input file to create feature vector
+        in_data = MobileData(infile, 'r')
+        in_data.open()
 
         count = 0
 
@@ -384,7 +384,8 @@ class Location:
 
             valid, date, feat_time, f1, f2, v1, v2 = self.read_entry(features_datafile)
 
-        features_datafile.close()
+        in_data.close()
+
         return
 
     def label_loc(self, st, distance, hcr, sr, trajectory,
