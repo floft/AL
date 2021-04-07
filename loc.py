@@ -15,6 +15,8 @@
 import math
 import os.path
 import sys
+from datetime import datetime
+from typing import Optional, Dict, Union
 
 import joblib
 import numpy as np
@@ -260,10 +262,17 @@ class Location:
 
         return
 
-    def read_sensors(self, infile, v1):
-        """ Read and store one set of sensor readings.
-        The first line is already read.
+    def update_sensors(self, event: Dict[str, Union[datetime, float, str, None]]):
         """
+        Update the sensor lists based on the input event.
+
+        Parameters
+        ----------
+        event : Dict[str, Union[datetime, float, str, None]]
+            An event dictionary with fields mapped to their respective values
+            Normally these would be output from the CSV Data Layer
+        """
+
         self.yaw.append(utils.clean_range(float(v1), -5.0, 5.0))
         valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
         self.pitch.append(utils.clean_range(float(v1), -5.0, 5.0))
@@ -316,22 +325,33 @@ class Location:
         in_data = MobileData(infile, 'r')
         in_data.open()
 
+        # Shorthand access to stamp field name:
+        stamp_field = self.conf.stamp_field_name
+
         count = 0
 
-        valid, date, feat_time, f1, f2, v1, v2 = self.read_entry(features_datafile)
-
-        prevdt = utils.get_datetime(date, feat_time)
+        prevdt = None  # type: Optional[datetime]
 
         gen = self.resetvars()
 
-        while valid:
-            dt = utils.get_datetime(date, feat_time)
+        # Loop over all event rows in the input file:
+        for event in in_data.rows_dict:
+            # Get event's stamp and use that to compute delta since last event:
+            dt = event[stamp_field]
+
+            # Set prevdt to this time if None (first event):
+            if prevdt is None:
+                prevdt = dt
+
             delta = dt - prevdt
 
             if self.new_window(delta, gen, count):  # start new window
                 gen = self.resetvars()
 
-            pdt, v2, date, feat_time = self.read_sensors(features_datafile, v1)
+            pdt, v2, date, feat_time = self.update_sensors(features_datafile, v1)
+            # Don't need pdt (valid is always True so don't use below)
+            # v2 is never used
+            # date, feat_time should be the same since we're only reading one event anyway (see below)
 
             month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory = \
                 features.calculate_time_and_space_features(self, dt)
@@ -372,10 +392,10 @@ class Location:
                         yvalue = self.map_location_name(place)
                         self.ydata.append(yvalue)
 
-            if not valid:
+            if not valid:  # valid can never be False here, as we only are in the loop if valid is True
                 prevdt = pdt
             else:
-                prevdt = utils.get_datetime(date, feat_time)
+                prevdt = utils.get_datetime(date, feat_time)  # should be able to just say pdt = dt since we already have it
 
             count += 1
 
