@@ -63,7 +63,6 @@ class Location:
         self.minlong = 180.0
         self.maxlong = -180.0
         self.locations = list()
-        self.local = 1  # Use the local GPS values
         self.xdata = list()
         self.ydata = list()
         self.clf = RandomForestClassifier(n_estimators=50,
