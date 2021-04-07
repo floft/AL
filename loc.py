@@ -192,6 +192,8 @@ class Location:
             gps_loc.append(longitude)
             gps_type = gps.get_location_type(gps_loc, 'locations')
             gps_loc.append(gps_type)
+            gps_loc.append(gps_type)
+            gps_loc.append(gps_type)
             self.locations.append(gps_loc)
             return gps_type
 
