@@ -348,10 +348,8 @@ class Location:
             if self.new_window(delta, gen, count):  # start new window
                 gen = self.resetvars()
 
-            pdt, v2, date, feat_time = self.update_sensors(features_datafile, v1)
-            # Don't need pdt (valid is always True so don't use below)
-            # v2 is never used
-            # date, feat_time should be the same since we're only reading one event anyway (see below)
+            # Update the sensor values for this window:
+            self.update_sensors(event)
 
             month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory = \
                 features.calculate_time_and_space_features(self, dt)
@@ -392,17 +390,12 @@ class Location:
                         yvalue = self.map_location_name(place)
                         self.ydata.append(yvalue)
 
-            if not valid:  # valid can never be False here, as we only are in the loop if valid is True
-                prevdt = pdt
-            else:
-                prevdt = utils.get_datetime(date, feat_time)  # should be able to just say pdt = dt since we already have it
+            pdt = dt
 
             count += 1
 
             if (count % 100000) == 0:
                 print('count', count)
-
-            valid, date, feat_time, f1, f2, v1, v2 = self.read_entry(features_datafile)
 
         in_data.close()
 
