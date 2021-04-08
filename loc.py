@@ -390,7 +390,7 @@ class Location:
                         yvalue = self.map_location_name(place)
                         self.ydata.append(yvalue)
 
-            pdt = dt
+            prevdt = dt
 
             count += 1
 
