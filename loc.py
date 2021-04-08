@@ -273,49 +273,49 @@ class Location:
             Normally these would be output from the CSV Data Layer
         """
 
-        self.yaw.append(utils.clean_range(float(v1), -5.0, 5.0))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.pitch.append(utils.clean_range(float(v1), -5.0, 5.0))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.roll.append(utils.clean_range(float(v1), -5.0, 5.0))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.rotx.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.roty.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.rotz.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accx.append(v1)
-        temp = v1 * v1
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accy.append(v1)
-        temp += v1 * v1
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accz.append(v1)
-        temp += v1 * v1
-        self.acctotal.append(np.sqrt(temp))  # compute combined acceleration
+        # Set all None values for sensors to just be zeros
+        # This just creates a new dictionary setting the value for each field to 0.0 if it is None:
+        e = {f: v if v is not None else 0.0 for f, v in event.items()}
 
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.latitude.append(float(v1))
-        self.update_location_range(float(v1), datatype="latitude")
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.longitude.append(float(v1))
-        self.update_location_range(float(v1), datatype="longitude")
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.altitude.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.course.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.speed.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.hacc.append(float(v1))
-        pdt = utils.get_datetime(date, sen_time)
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.vacc.append(float(v1))
-        return pdt, v2, date, sen_time
+        yaw_clean = utils.clean_range(e['yaw'], -5.0, 5.0)
+        self.yaw.append(yaw_clean)
+
+        pitch_clean = utils.clean_range(e['pitch'], -5.0, 5.0)
+        self.pitch.append(pitch_clean)
+
+        roll_clean = utils.clean_range(e['roll'], -5.0, 5.0)
+        self.roll.append(roll_clean)
+
+        self.rotx.append(e['rotation_rate_x'])
+        self.roty.append(e['rotation_rate_y'])
+        self.rotz.append(e['rotation_rate_z'])
+
+        acc_x_clean = utils.clean(e['user_acceleration_x'], -1.0, 1.0)
+        self.accx.append(acc_x_clean)
+        acc_total = acc_x_clean * acc_x_clean
+
+        acc_y_clean = utils.clean(e['user_acceleration_y'], -1.0, 1.0)
+        self.accy.append(acc_y_clean)
+        acc_total += acc_y_clean * acc_y_clean
+
+        acc_z_clean = utils.clean(e['user_acceleration_z'], -1.0, 1.0)
+        self.accz.append(acc_z_clean)
+        acc_total += acc_z_clean * acc_z_clean
+
+        self.acctotal.append(math.sqrt(acc_total))  # compute combined acceleration
+
+        self.latitude.append(e['latitude'])
+        self.update_location_range(e['latitude'], datatype="latitude")
+
+        self.longitude.append(e['longitude'])
+        self.update_location_range(e['longitude'], datatype="longitude")
+
+        self.altitude.append(e['altitude'])
+
+        self.course.append(e['course'])
+        self.speed.append(e['speed'])
+        self.hacc.append(e['horizontal_accuracy'])
+        self.vacc.append(e['vertical_accuracy'])
 
     def extract_features(self, base_filename):
         """ Extract a feature vector that will be input to a location classifier.
