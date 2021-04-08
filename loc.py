@@ -85,19 +85,6 @@ class Location:
             return newname
 
     @staticmethod
-    def generate_location_num(name):
-        """ Transform a location type into an index value.
-        """
-        if name == 'house':
-            return 0
-        elif name == 'road':
-            return 1
-        elif name == 'work':
-            return 2
-        else:
-            return 3
-
-    @staticmethod
     def generate_location_features(name):
         """ Transform a location type into a vector using one-shot encoding.
         The location types are house, road, work, or other.
