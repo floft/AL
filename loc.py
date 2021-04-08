@@ -74,22 +74,6 @@ class Location:
                                           n_jobs=self.conf.loc_n_jobs)
         return
 
-    @staticmethod
-    def read_entry(infile):
-        """ Parse a single line from a text file containing a sensor reading.
-        The format is "date time sensorname sensorname value <activitylabel|0>".
-        """
-        try:
-            line = infile.readline()
-            x = str(str(line).strip()).split(' ', 5)
-            if len(x) < 6:
-                return True, x[0], x[1], x[2], x[3], x[4], 'None'
-            else:
-                x[5] = x[5].replace(' ', '_')
-                return True, x[0], x[1], x[2], x[3], x[4], x[5]
-        except:
-            return False, None, None, None, None, None, None
-
     def map_location_name(self, name):
         """ Return the location type that is associated with a specific location
         name, using the stored list of location mappings.
