@@ -14,12 +14,10 @@
 
 import math
 import os.path
-import sys
 from datetime import datetime
 from typing import Optional, Dict, Union
 
 import joblib
-import numpy as np
 from numpy import mean
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
