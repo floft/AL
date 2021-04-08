@@ -351,9 +351,6 @@ class Location:
             # Update the sensor values for this window:
             self.update_sensors(event)
 
-            month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory = \
-                features.calculate_time_and_space_features(self, dt)
-
             if (count % self.conf.samplesize) == (self.conf.samplesize - 1):  # end of window
                 xpoint = list()
                 gen = 1
@@ -369,6 +366,9 @@ class Location:
 
                     for i in [self.course, self.speed, self.hacc, self.vacc]:
                         xpoint.extend(features.generate_features(i, self.conf))
+
+                    month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory = \
+                        features.calculate_time_and_space_features(self, dt)
 
                     xpoint.append(distance)
                     xpoint.append(hcr)
