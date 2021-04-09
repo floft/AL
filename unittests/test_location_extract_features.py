@@ -18,6 +18,7 @@ class LocationExtractFeaturesTest(TestCase):
         # arrange
         test_config = Config(description='test')
         test_config.datapath = './test_data/'  # point to the test data directory
+        test_config.extension = '.instances.csv'  # use the CSV file instead of AL-format
 
         test_config.translate = True
         test_config.filter_data = False
@@ -157,6 +158,7 @@ class LocationExtractFeaturesTest(TestCase):
         # arrange
         test_config = Config(description='test')
         test_config.datapath = './test_data/'  # point to the test data directory
+        test_config.extension = '.instances.csv'  # use the CSV file instead of AL-format
 
         test_config.translate = True
         test_config.filter_data = False

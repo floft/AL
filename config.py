@@ -28,6 +28,9 @@ MODE_OC_TRAIN_MODEL = 'oc_train_model'
 MODE_OC_TEST_MODEL = 'oc_test_model'
 MODE_OC_ANNOTATE_DATA = 'oc_annotate_data'
 
+STAMP_CSV_FIELD = 'stamp'  # name of the timestamp field in CSV files
+ACTIVITY_LABEL_CSV_FIELD = 'user_activity_label'  # name of the user activity label field in CSV
+
 
 class Config:
 
@@ -74,6 +77,10 @@ class Config:
         self.modelpath = './models/'  # directory containing trained models
         self.clusterpath = './clusters/'  # directory of personal location clusters
         self.num_hour_clusters = 5  # number of clusters stored for each person
+
+        # Defaults for the CSV field headers of interest
+        self.stamp_field_name = STAMP_CSV_FIELD
+        self.label_field_name = ACTIVITY_LABEL_CSV_FIELD
 
         # default list of activity classes for overall activity
         self.default_activity_list = ['Chores', 'Eat', 'Entertainment', 'Errands',

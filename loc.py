@@ -14,10 +14,10 @@
 
 import math
 import os.path
-import sys
+from datetime import datetime
+from typing import Optional, Dict, Union
 
 import joblib
-import numpy as np
 from numpy import mean
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
@@ -27,6 +27,7 @@ import config
 import features
 import gps
 import utils
+from mobiledata import MobileData
 
 
 class Location:
@@ -73,22 +74,6 @@ class Location:
                                           n_jobs=self.conf.loc_n_jobs)
         return
 
-    @staticmethod
-    def read_entry(infile):
-        """ Parse a single line from a text file containing a sensor reading.
-        The format is "date time sensorname sensorname value <activitylabel|0>".
-        """
-        try:
-            line = infile.readline()
-            x = str(str(line).strip()).split(' ', 5)
-            if len(x) < 6:
-                return True, x[0], x[1], x[2], x[3], x[4], 'None'
-            else:
-                x[5] = x[5].replace(' ', '_')
-                return True, x[0], x[1], x[2], x[3], x[4], x[5]
-        except:
-            return False, None, None, None, None, None, None
-
     def map_location_name(self, name):
         """ Return the location type that is associated with a specific location
         name, using the stored list of location mappings.
@@ -98,19 +83,6 @@ class Location:
             return 'other'
         else:
             return newname
-
-    @staticmethod
-    def generate_location_num(name):
-        """ Transform a location type into an index value.
-        """
-        if name == 'house':
-            return 0
-        elif name == 'road':
-            return 1
-        elif name == 'work':
-            return 2
-        else:
-            return 3
 
     @staticmethod
     def generate_location_features(name):
@@ -259,82 +231,94 @@ class Location:
 
         return
 
-    def read_sensors(self, infile, v1):
-        """ Read and store one set of sensor readings.
-        The first line is already read.
+    def update_sensors(self, event: Dict[str, Union[datetime, float, str, None]]):
         """
-        self.yaw.append(utils.clean_range(float(v1), -5.0, 5.0))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.pitch.append(utils.clean_range(float(v1), -5.0, 5.0))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.roll.append(utils.clean_range(float(v1), -5.0, 5.0))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.rotx.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.roty.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.rotz.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accx.append(v1)
-        temp = v1 * v1
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accy.append(v1)
-        temp += v1 * v1
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accz.append(v1)
-        temp += v1 * v1
-        self.acctotal.append(np.sqrt(temp))  # compute combined acceleration
+        Update the sensor lists based on the input event.
 
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.latitude.append(float(v1))
-        self.update_location_range(float(v1), datatype="latitude")
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.longitude.append(float(v1))
-        self.update_location_range(float(v1), datatype="longitude")
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.altitude.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.course.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.speed.append(float(v1))
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.hacc.append(float(v1))
-        pdt = utils.get_datetime(date, sen_time)
-        valid, date, sen_time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.vacc.append(float(v1))
-        return pdt, v2, date, sen_time
+        Parameters
+        ----------
+        event : Dict[str, Union[datetime, float, str, None]]
+            An event dictionary with fields mapped to their respective values
+            Normally these would be output from the CSV Data Layer
+        """
+
+        # Set all None values for sensors to just be zeros
+        # This just creates a new dictionary setting the value for each field to 0.0 if it is None:
+        e = {f: v if v is not None else 0.0 for f, v in event.items()}
+
+        yaw_clean = utils.clean_range(e['yaw'], -5.0, 5.0)
+        self.yaw.append(yaw_clean)
+
+        pitch_clean = utils.clean_range(e['pitch'], -5.0, 5.0)
+        self.pitch.append(pitch_clean)
+
+        roll_clean = utils.clean_range(e['roll'], -5.0, 5.0)
+        self.roll.append(roll_clean)
+
+        self.rotx.append(e['rotation_rate_x'])
+        self.roty.append(e['rotation_rate_y'])
+        self.rotz.append(e['rotation_rate_z'])
+
+        acc_x_clean = utils.clean(e['user_acceleration_x'], -1.0, 1.0)
+        self.accx.append(acc_x_clean)
+        acc_total = acc_x_clean * acc_x_clean
+
+        acc_y_clean = utils.clean(e['user_acceleration_y'], -1.0, 1.0)
+        self.accy.append(acc_y_clean)
+        acc_total += acc_y_clean * acc_y_clean
+
+        acc_z_clean = utils.clean(e['user_acceleration_z'], -1.0, 1.0)
+        self.accz.append(acc_z_clean)
+        acc_total += acc_z_clean * acc_z_clean
+
+        self.acctotal.append(math.sqrt(acc_total))  # compute combined acceleration
+
+        self.latitude.append(e['latitude'])
+        self.update_location_range(e['latitude'], datatype="latitude")
+
+        self.longitude.append(e['longitude'])
+        self.update_location_range(e['longitude'], datatype="longitude")
+
+        self.altitude.append(e['altitude'])
+
+        self.course.append(e['course'])
+        self.speed.append(e['speed'])
+        self.hacc.append(e['horizontal_accuracy'])
+        self.vacc.append(e['vertical_accuracy'])
 
     def extract_features(self, base_filename):
         """ Extract a feature vector that will be input to a location classifier.
         """
-        fs1 = list()
-        fs2 = list()
 
         infile = os.path.join(self.conf.datapath, base_filename + self.conf.extension)
-        features_datafile = open(infile, "r")  # process input file to create feature vector
+        in_data = MobileData(infile, 'r')
+        in_data.open()
+
+        # Shorthand access to stamp field name:
+        stamp_field = self.conf.stamp_field_name
 
         count = 0
 
-        valid, date, feat_time, f1, f2, v1, v2 = self.read_entry(features_datafile)
-
-        prevdt = utils.get_datetime(date, feat_time)
+        prevdt = None  # type: Optional[datetime]
 
         gen = self.resetvars()
 
-        while valid:
-            dt = utils.get_datetime(date, feat_time)
+        # Loop over all event rows in the input file:
+        for event in in_data.rows_dict:
+            # Get event's stamp and use that to compute delta since last event:
+            dt = event[stamp_field]
+
+            # Set prevdt to this time if None (first event):
+            if prevdt is None:
+                prevdt = dt
+
             delta = dt - prevdt
 
             if self.new_window(delta, gen, count):  # start new window
                 gen = self.resetvars()
 
-            pdt, v2, date, feat_time = self.read_sensors(features_datafile, v1)
-
-            month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory = \
-                features.calculate_time_and_space_features(self, dt)
+            # Update the sensor values for this window:
+            self.update_sensors(event)
 
             if (count % self.conf.samplesize) == (self.conf.samplesize - 1):  # end of window
                 xpoint = list()
@@ -351,6 +335,9 @@ class Location:
 
                     for i in [self.course, self.speed, self.hacc, self.vacc]:
                         xpoint.extend(features.generate_features(i, self.conf))
+
+                    month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory = \
+                        features.calculate_time_and_space_features(self, dt)
 
                     xpoint.append(distance)
                     xpoint.append(hcr)
@@ -372,19 +359,15 @@ class Location:
                         yvalue = self.map_location_name(place)
                         self.ydata.append(yvalue)
 
-            if not valid:
-                prevdt = pdt
-            else:
-                prevdt = utils.get_datetime(date, feat_time)
+            prevdt = dt
 
             count += 1
 
             if (count % 100000) == 0:
                 print('count', count)
 
-            valid, date, feat_time, f1, f2, v1, v2 = self.read_entry(features_datafile)
+        in_data.close()
 
-        features_datafile.close()
         return
 
     def label_loc(self, st, distance, hcr, sr, trajectory,
