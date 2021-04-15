@@ -124,9 +124,6 @@ class BaseDataProcessor(ABC):
         in_data = MobileData(infile, 'r')
         in_data.open()
 
-        # Shorthand access to stamp field name:
-        stamp_field = self.conf.stamp_field_name
-
         self.count = 0
 
         prevdt = None  # type: Optional[datetime]
@@ -136,7 +133,7 @@ class BaseDataProcessor(ABC):
         # Loop over all event rows in the input file:
         for event in in_data.rows_dict:
             # Get event's stamp and use that to compute delta since last event:
-            dt = event[stamp_field]
+            dt = event[self.conf.stamp_field_name]
 
             # Set prevdt to this time if None (first event):
             if prevdt is None:
