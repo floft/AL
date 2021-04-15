@@ -246,13 +246,13 @@ class Location:
         # This just creates a new dictionary setting the value for each field to 0.0 if it is None:
         e = {f: v if v is not None else 0.0 for f, v in event.items()}
 
-        yaw_clean = utils.clean_range(e['yaw'], -5.0, 5.0)
+        yaw_clean = utils.clean(e['yaw'], -5.0, 5.0)
         self.yaw.append(yaw_clean)
 
-        pitch_clean = utils.clean_range(e['pitch'], -5.0, 5.0)
+        pitch_clean = utils.clean(e['pitch'], -5.0, 5.0)
         self.pitch.append(pitch_clean)
 
-        roll_clean = utils.clean_range(e['roll'], -5.0, 5.0)
+        roll_clean = utils.clean(e['roll'], -5.0, 5.0)
         self.roll.append(roll_clean)
 
         self.rotx.append(e['rotation_rate_x'])
