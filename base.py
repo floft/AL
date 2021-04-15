@@ -7,12 +7,14 @@ Written by Bryan Minor, Washington State University
 Copyright (c) 2021. Washington State University (WSU). All rights reserved.
 Code and data may not be used or distributed without permission from WSU.
 """
+import math
 import os
 from abc import ABC
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Dict, Union
 
 import config
+import utils
 from mobiledata import MobileData
 
 
@@ -250,3 +252,60 @@ class BaseDataProcessor(ABC):
 
         return delta.seconds > 2 or gen == 1 or \
             (self.conf.annotate > 0 and self.count % self.conf.samplesize == 0)
+
+    def update_from_event(self, event: Dict[str, Union[datetime, float, str, None]]):
+        """
+        Process a new sensor event to update state.
+
+        By default, updates the sensor value lists with the new sensor values
+
+        Parameters
+        ----------
+        event : Dict[str, Union[datetime, float, str, None]]
+            An event dictionary with fields mapped to their respective values
+            Normally these would be output from the CSV Data Layer
+        """
+
+        # Set all None values for sensors to just be zeros
+        # This just creates a new dictionary setting the value for each field to 0.0 if it is None:
+        e = {f: v if v is not None else 0.0 for f, v in event.items()}
+
+        yaw_clean = utils.clean(e['yaw'], -5.0, 5.0)
+        self.yaw.append(yaw_clean)
+
+        pitch_clean = utils.clean(e['pitch'], -5.0, 5.0)
+        self.pitch.append(pitch_clean)
+
+        roll_clean = utils.clean(e['roll'], -5.0, 5.0)
+        self.roll.append(roll_clean)
+
+        self.rotx.append(e['rotation_rate_x'])
+        self.roty.append(e['rotation_rate_y'])
+        self.rotz.append(e['rotation_rate_z'])
+
+        acc_x_clean = utils.clean(e['user_acceleration_x'], -1.0, 1.0)
+        self.accx.append(acc_x_clean)
+        acc_total = acc_x_clean * acc_x_clean
+
+        acc_y_clean = utils.clean(e['user_acceleration_y'], -1.0, 1.0)
+        self.accy.append(acc_y_clean)
+        acc_total += acc_y_clean * acc_y_clean
+
+        acc_z_clean = utils.clean(e['user_acceleration_z'], -1.0, 1.0)
+        self.accz.append(acc_z_clean)
+        acc_total += acc_z_clean * acc_z_clean
+
+        self.acctotal.append(math.sqrt(acc_total))  # compute combined acceleration
+
+        self.latitude.append(e['latitude'])
+        self.update_location_range(e['latitude'], datatype="latitude")
+
+        self.longitude.append(e['longitude'])
+        self.update_location_range(e['longitude'], datatype="longitude")
+
+        self.altitude.append(e['altitude'])
+
+        self.course.append(e['course'])
+        self.speed.append(e['speed'])
+        self.hacc.append(e['horizontal_accuracy'])
+        self.vacc.append(e['vertical_accuracy'])
