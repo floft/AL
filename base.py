@@ -309,3 +309,39 @@ class BaseDataProcessor(ABC):
         self.speed.append(e['speed'])
         self.hacc.append(e['horizontal_accuracy'])
         self.vacc.append(e['vertical_accuracy'])
+
+    def update_location_range(self, value: float, datatype: str):
+        """
+        Update location range for the given datatype for this window.
+
+        Parameters
+        ----------
+        value : float
+            The value of the sensor
+        datatype : str
+            The type of data: either 'latitude' or 'longitude'
+        """
+
+        if datatype == "latitude":
+            minrange = self.minlat
+            maxrange = self.maxlat
+        else:
+            minrange = self.minlong
+            maxrange = self.maxlong
+
+        if not minrange:
+            minrange = float(value)
+        elif float(value) < minrange:
+            minrange = float(value)
+
+        if not maxrange:
+            maxrange = float(value)
+        elif float(value) > maxrange:
+            maxrange = float(value)
+
+        if datatype == "latitude":
+            self.minlat = minrange
+            self.maxlat = maxrange
+        else:
+            self.minlong = minrange
+            self.maxlong = maxrange
