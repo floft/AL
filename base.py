@@ -7,10 +7,13 @@ Written by Bryan Minor, Washington State University
 Copyright (c) 2021. Washington State University (WSU). All rights reserved.
 Code and data may not be used or distributed without permission from WSU.
 """
-
+import os
 from abc import ABC
+from datetime import datetime
+from typing import Optional
 
 import config
+from mobiledata import MobileData
 
 
 class BaseDataProcessor(ABC):
@@ -82,3 +85,113 @@ class BaseDataProcessor(ABC):
         # Create an attribute for setting the classifier to use:
         # You should override this in an inherited initializer if you plan to use a classifier
         self.clf = None
+
+    def extract_features(self, base_filename: str):
+        """
+        Process an input file row-by-row to extract features and process events.
+        This is used as the basis for both extracting feature vectors for train/test, as well as
+        for annotation.
+
+        The method will start by opening the data file and doing other setup. Then, it reads in the
+        file row-by-row.
+
+        For each row, it first checks if the window should be reset by checking the `new_window()`
+        method. Then, it calls `update_from_event()` with the new event. In the default
+        implementation, this adds the event's sensor values to the sensor lists for the window.
+        Then, the `end_window()` method is called to check and see if we have reached the end of a
+        window.
+
+        If so, we then proceed to create the feature vector for the window using the
+        `create_point()` method. This is a base implementation, which will create the feature
+        vector with most features in it. You should override this instead if you want a different
+        set of features. (Sub-functions for each feature "group" are also provided to make this
+        easier to change.)
+
+        Then, the `new_vector()` method is called to let you handle what to do with the new feature
+        vector. For example, you could add the vector to `self.xdata` and assign an appropriate
+        `self.ydata` value.
+
+        Parameters
+        ----------
+        base_filename : str
+            The base filename (before datapath and extension are added) to process
+        """
+
+        infile = os.path.join(self.conf.datapath, base_filename + self.conf.extension)
+        in_data = MobileData(infile, 'r')
+        in_data.open()
+
+        # Shorthand access to stamp field name:
+        stamp_field = self.conf.stamp_field_name
+
+        count = 0
+
+        prevdt = None  # type: Optional[datetime]
+
+        gen = self.resetvars()
+
+        # Loop over all event rows in the input file:
+        for event in in_data.rows_dict:
+            # Get event's stamp and use that to compute delta since last event:
+            dt = event[stamp_field]
+
+            # Set prevdt to this time if None (first event):
+            if prevdt is None:
+                prevdt = dt
+
+            delta = dt - prevdt
+
+            if self.new_window(delta, gen, count):  # start new window
+                gen = self.resetvars()
+
+            # Update the sensor values for this window:
+            self.update_sensors(event)
+
+            if (count % self.conf.samplesize) == (self.conf.samplesize - 1):  # end of window
+                xpoint = list()
+                gen = 1
+
+                if self.valid_location_data(self.latitude, self.longitude, self.altitude):
+                    for i in [self.yaw, self.pitch, self.roll, self.rotx, self.roty,
+                              self.rotz, self.accx, self.accy, self.accz, self.acctotal]:
+                        xpoint.extend(features.generate_features(i, self.conf))
+
+                    for i in [self.latitude, self.longitude, self.altitude]:
+                        # Only include absolute features if enabled in config:
+                        xpoint.extend(features.generate_features(i, self.conf,
+                                                                 include_absolute_features=self.conf.gen_gps_abs_stat_features))
+
+                    for i in [self.course, self.speed, self.hacc, self.vacc]:
+                        xpoint.extend(features.generate_features(i, self.conf))
+
+                    month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory = \
+                        features.calculate_time_and_space_features(self, dt)
+
+                    xpoint.append(distance)
+                    xpoint.append(hcr)
+                    xpoint.append(sr)
+                    xpoint.append(trajectory)
+
+                    xpoint.append(month)
+                    xpoint.append(dayofweek)
+                    xpoint.append(hours)
+                    xpoint.append(minutes)
+                    xpoint.append(seconds)
+
+                    place = self.generate_gps_features(mean(self.latitude),
+                                                       mean(self.longitude))
+
+                    if place != 'None':
+                        self.xdata.append(xpoint)
+
+                        yvalue = self.map_location_name(place)
+                        self.ydata.append(yvalue)
+
+            prevdt = dt
+
+            count += 1
+
+            if (count % 100000) == 0:
+                print('count', count)
+
+        in_data.close()
