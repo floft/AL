@@ -143,13 +143,15 @@ class BaseDataProcessor(ABC):
 
             delta = dt - prevdt
 
-            if self.new_window(delta, gen):  # start new window
+            # Check if we should start a new window (reset window lists):
+            if self.new_window(delta, gen):
                 gen = self.resetvars()
 
             # Update the sensor values for this window:
-            self.update_sensors(event)
+            self.update_from_event(event)
 
-            if (self.count % self.conf.samplesize) == (self.conf.samplesize - 1):  # end of window
+            # Check if this should be the end of a window:
+            if self.end_window(event):
                 xpoint = list()
                 gen = 1
 
@@ -228,7 +230,7 @@ class BaseDataProcessor(ABC):
 
         return 0
 
-    def new_window(self, delta: timedelta, gen: int):
+    def new_window(self, delta: timedelta, gen: int) -> bool:
         """
         Determine if a new window should be created.
 
@@ -252,6 +254,26 @@ class BaseDataProcessor(ABC):
 
         return delta.seconds > 2 or gen == 1 or \
             (self.conf.annotate > 0 and self.count % self.conf.samplesize == 0)
+
+    def end_window(self, latest_event: Dict[str, Union[datetime, float, str, None]]) -> bool:
+        """
+        Determine whether to end a window and calculate feature vector.
+
+        By default, simply check if if we have `conf.samplesize` events in the window. Override
+        this if you'd like further checks for window end.
+
+        Parameters
+        ----------
+        latest_event : Dict[str, Union[datetime, float, str, None]]
+            The latest event read from the file (which would form the end of the window)
+
+        Returns
+        -------
+        bool
+            True if we should end the window and calculate features now
+        """
+
+        return self.count % self.conf.samplesize == self.conf.samplesize - 1
 
     def update_from_event(self, event: Dict[str, Union[datetime, float, str, None]]):
         """
