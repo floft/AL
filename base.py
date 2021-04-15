@@ -10,6 +10,8 @@ Code and data may not be used or distributed without permission from WSU.
 
 from abc import ABC
 
+import config
+
 
 class BaseDataProcessor(ABC):
     """
@@ -31,3 +33,52 @@ class BaseDataProcessor(ABC):
       - A `update_from_event()` method for handling updating sensor tracking based on a new event
       TODO: Add other pieces here
     """
+
+    def __init__(self, conf: config.Config):
+        """
+        Default initializer. This will set the given config for the class, and also set up default
+        sensor value lists for tracking sensors.
+
+        Override this method (while calling it as a super) to add additional functionality.
+
+        Parameters
+        ----------
+        conf : config.Config
+            An AL Config object that has been loaded with the configuration to use
+            Gets attached to this object
+        """
+
+        self.conf = conf
+
+        # For holding feature vectors and ground-truth labels:
+        self.xdata = list()
+        self.ydata = list()
+
+        # Create default lists for storing sensor values in windows:
+        self.yaw = list()
+        self.pitch = list()
+        self.roll = list()
+        self.rotx = list()
+        self.roty = list()
+        self.rotz = list()
+        self.accx = list()
+        self.accy = list()
+        self.accz = list()
+        self.acctotal = list()
+        self.latitude = list()
+        self.longitude = list()
+        self.altitude = list()
+        self.course = list()
+        self.speed = list()
+        self.hacc = list()
+        self.vacc = list()
+
+        # Set up default min/max lat/long values for use:
+        self.minlat = 90.0
+        self.maxlat = -90.0
+        self.minlong = 180.0
+        self.maxlong = -180.0
+
+        # Create an attribute for setting the classifier to use:
+        # You should override this in an inherited initializer if you plan to use a classifier
+        self.clf = None
