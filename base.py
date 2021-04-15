@@ -9,7 +9,7 @@ Code and data may not be used or distributed without permission from WSU.
 """
 import os
 from abc import ABC
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 import config
@@ -82,6 +82,9 @@ class BaseDataProcessor(ABC):
         self.minlong = 180.0
         self.maxlong = -180.0
 
+        # Count for feature extraction:
+        self.count = 0
+
         # Create an attribute for setting the classifier to use:
         # You should override this in an inherited initializer if you plan to use a classifier
         self.clf = None
@@ -124,7 +127,7 @@ class BaseDataProcessor(ABC):
         # Shorthand access to stamp field name:
         stamp_field = self.conf.stamp_field_name
 
-        count = 0
+        self.count = 0
 
         prevdt = None  # type: Optional[datetime]
 
@@ -141,13 +144,13 @@ class BaseDataProcessor(ABC):
 
             delta = dt - prevdt
 
-            if self.new_window(delta, gen, count):  # start new window
+            if self.new_window(delta, gen):  # start new window
                 gen = self.resetvars()
 
             # Update the sensor values for this window:
             self.update_sensors(event)
 
-            if (count % self.conf.samplesize) == (self.conf.samplesize - 1):  # end of window
+            if (self.count % self.conf.samplesize) == (self.conf.samplesize - 1):  # end of window
                 xpoint = list()
                 gen = 1
 
@@ -189,9 +192,64 @@ class BaseDataProcessor(ABC):
 
             prevdt = dt
 
-            count += 1
+            self.count += 1
 
-            if (count % 100000) == 0:
-                print('count', count)
+            if (self.count % 100000) == 0:
+                print('count', self.count)
 
         in_data.close()
+
+    def resetvars(self):
+        """
+        Clear sensor value arrays and min/max lat/long values for a new window.
+        """
+
+        self.yaw = list()
+        self.pitch = list()
+        self.roll = list()
+        self.rotx = list()
+        self.roty = list()
+        self.rotz = list()
+        self.accx = list()
+        self.accy = list()
+        self.accz = list()
+        self.acctotal = list()
+        self.latitude = list()
+        self.longitude = list()
+        self.altitude = list()
+        self.course = list()
+        self.speed = list()
+        self.hacc = list()
+        self.vacc = list()
+
+        self.minlat = 90.0
+        self.maxlat = -90.0
+        self.minlong = 180.0
+        self.maxlong = -180.0
+
+        return 0
+
+    def new_window(self, delta: timedelta, gen: int):
+        """
+        Determine if a new window should be created.
+
+        TODO: Check on this code and clean up as applicable. Make sure it's doing what we expect
+        Some things to check:
+        - Switch `gen` to a bool
+        - Should we use something else instead of `conf.annotate`? e.g. checking for annotate mode?
+
+        Parameters
+        ----------
+        delta : timedelta
+            The time since the last event
+        gen : int
+            If 1, indicates we just finished a window, so we should restart now
+
+        Returns
+        -------
+        bool
+            True if it is time to start a new window
+        """
+
+        return delta.seconds > 2 or gen == 1 or \
+            (self.conf.annotate > 0 and self.count % self.conf.samplesize == 0)
