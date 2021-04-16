@@ -154,35 +154,10 @@ class BaseDataProcessor(ABC):
 
             # Check if this should be the end of a window:
             if self.end_window(event):
-                xpoint = list()
                 gen = 1
 
-                if self.valid_location_data(self.latitude, self.longitude, self.altitude):
-                    for i in [self.yaw, self.pitch, self.roll, self.rotx, self.roty,
-                              self.rotz, self.accx, self.accy, self.accz, self.acctotal]:
-                        xpoint.extend(features.generate_features(i, self.conf))
-
-                    for i in [self.latitude, self.longitude, self.altitude]:
-                        # Only include absolute features if enabled in config:
-                        xpoint.extend(features.generate_features(i, self.conf,
-                                                                 include_absolute_features=self.conf.gen_gps_abs_stat_features))
-
-                    for i in [self.course, self.speed, self.hacc, self.vacc]:
-                        xpoint.extend(features.generate_features(i, self.conf))
-
-                    month, dayofweek, hours, minutes, seconds, distance, hcr, sr, trajectory = \
-                        features.calculate_time_and_space_features(self, dt)
-
-                    xpoint.append(distance)
-                    xpoint.append(hcr)
-                    xpoint.append(sr)
-                    xpoint.append(trajectory)
-
-                    xpoint.append(month)
-                    xpoint.append(dayofweek)
-                    xpoint.append(hours)
-                    xpoint.append(minutes)
-                    xpoint.append(seconds)
+                if self.should_create_feats_for_window(event):
+                    xpoint = self.create_point(event)
 
                     place = self.generate_gps_features(mean(self.latitude),
                                                        mean(self.longitude))
@@ -369,6 +344,27 @@ class BaseDataProcessor(ABC):
         else:
             self.minlong = minrange
             self.maxlong = maxrange
+
+    def should_create_feats_for_window(self,
+                                       latest_event: Dict[str, Union[datetime, float, str, None]]) \
+            -> bool:
+        """
+        Whether we should create a feature vector for this window.
+
+        By default, always return True. Override if you want to add further checks.
+
+        Parameters
+        ----------
+        latest_event : Dict[str, Union[datetime, float, str, None]]
+            The last event in the window
+
+        Returns
+        -------
+        bool
+            True if we should create a vector for this window.
+        """
+
+        return True
 
     def create_point(self, latest_event: Dict[str, Union[datetime, float, str, None]]) \
             -> List[float]:
