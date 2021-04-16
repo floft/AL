@@ -11,10 +11,11 @@ import math
 import os
 from abc import ABC
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Union
+from typing import Optional, Dict, Union, List
 
 import config
 import utils
+from features import calculate_time_and_space_features, generate_features, twod_features
 from mobiledata import MobileData
 
 
@@ -367,3 +368,95 @@ class BaseDataProcessor(ABC):
         else:
             self.minlong = minrange
             self.maxlong = maxrange
+
+    def create_point(self, latest_event: Dict[str, Union[datetime, float, str, None]]) \
+            -> List[float]:
+        """
+        Create a feature vector (point) at the end of a window. Uses sub-functions for traditional
+        major components, so you can override just those or this whole method as needed to create
+        the desired feature vector.
+
+        Default implementation creates feature vectors in the manner used by AL.
+
+        Parameters
+        ----------
+        latest_event : Dict[str, Union[datetime, float, str, None]]
+            The last event processed in the window
+
+        Returns
+        -------
+        List[float]
+            A feature vector created from the window
+        """
+
+        latest_stamp = latest_event[self.conf.stamp_field_name]
+
+        xpoint = list()
+
+        month, dayofweek, hours, minutes, seconds, distance, hcr, sr, pt_trajectory = \
+            calculate_time_and_space_features(self, latest_stamp)
+
+        xpoint.extend(self.gen_motion_sensor_features(latest_event))
+
+        xpoint.extend(twod_features(self))
+
+        if st.conf.local == 1:
+            for i in [st.latitude, st.longitude, st.altitude]:
+                # Only include absolute features if enabled in config:
+                xpoint.extend(generate_features(x=i, cf=st.conf,
+                                                include_absolute_features=st.conf.gen_gps_abs_stat_features))
+
+            for i in [st.course, st.speed, st.hacc, st.vacc]:
+                xpoint.extend(generate_features(x=i, cf=st.conf))
+
+            xpoint += [distance, hcr, sr, pt_trajectory]
+
+        xpoint += [month, dayofweek, hours, minutes, seconds]
+
+        if st.conf.sfeatures == 1:
+            xpoint += person.calculate_person_features(filename, st, person_stats, clusters)
+
+        if st.conf.gpsfeatures == 1:
+            if st.conf.locmodel == 1:
+                newname = st.location.find_location(st.latitude[-1], st.longitude[-1])
+
+                if newname is None:
+                    newname = st.location.label_loc(st, distance, hcr, sr,
+                                                    pt_trajectory, month, dayofweek, hours, minutes,
+                                                    seconds)
+            else:
+                place = st.location.generate_gps_features(np.mean(st.latitude),
+                                                          np.mean(st.longitude))
+
+                newname = st.location.map_location_name(place)
+
+            xpoint.extend(st.location.generate_location_features(newname))
+
+        return xpoint
+
+    def gen_motion_sensor_features(self,
+                                   latest_event: Dict[str, Union[datetime, float, str, None]]) \
+            -> List[float]:
+        """
+        Generate motion-sensor-based features for a window.
+        """
+
+        motion_feats = list()
+
+        for i in [self.yaw, self.pitch, self.roll, self.rotx, self.roty,
+                  self.rotz, self.accx, self.accy, self.accz, self.acctotal]:
+            if self.conf.filter_data:
+                i = utils.butter_lowpass_filter(i)
+
+            motion_feats.extend(generate_features(x=i, cf=self.conf))
+
+        return motion_feats
+
+    def gen_location_sensor_features(self,
+                                     latest_event: Dict[str, Union[datetime, float, str, None]]) \
+            -> List[float]:
+        """
+        Generate location-sensor-based features for a window.
+        """
+
+        pass
