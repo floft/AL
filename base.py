@@ -377,7 +377,7 @@ class BaseDataProcessor(ABC):
         major components, so you can override just those or this whole method as needed to create
         the desired feature vector.
 
-        Default implementation creates feature vectors in the manner used by AL.
+        Default implementation creates feature vectors in the manner used by the Location model.
 
         Parameters
         ----------
@@ -390,34 +390,17 @@ class BaseDataProcessor(ABC):
             A feature vector created from the window
         """
 
+        latest_stamp = latest_event[self.conf.stamp_field_name]
+
         xpoint = list()
 
         xpoint.extend(self.gen_motion_sensor_features(latest_event))
 
-        xpoint.extend(twod_features(self))
-
         xpoint.extend(self.gen_location_sensor_features(latest_event))
 
-        xpoint.extend(self.gen_time_features(latest_event))
+        xpoint.extend(calculate_space_features(self))
 
-        if st.conf.sfeatures == 1:
-            xpoint += person.calculate_person_features(filename, st, person_stats, clusters)
-
-        if st.conf.gpsfeatures == 1:
-            if st.conf.locmodel == 1:
-                newname = st.location.find_location(st.latitude[-1], st.longitude[-1])
-
-                if newname is None:
-                    newname = st.location.label_loc(st, distance, hcr, sr,
-                                                    pt_trajectory, month, dayofweek, hours, minutes,
-                                                    seconds)
-            else:
-                place = st.location.generate_gps_features(np.mean(st.latitude),
-                                                          np.mean(st.longitude))
-
-                newname = st.location.map_location_name(place)
-
-            xpoint.extend(st.location.generate_location_features(newname))
+        xpoint.extend(calculate_time_features(latest_stamp))
 
         return xpoint
 
@@ -432,9 +415,6 @@ class BaseDataProcessor(ABC):
 
         for i in [self.yaw, self.pitch, self.roll, self.rotx, self.roty,
                   self.rotz, self.accx, self.accy, self.accz, self.acctotal]:
-            if self.conf.filter_data:
-                i = utils.butter_lowpass_filter(i)
-
             motion_feats.extend(generate_features(x=i, cf=self.conf))
 
         return motion_feats
@@ -448,27 +428,14 @@ class BaseDataProcessor(ABC):
 
         loc_feats = list()
 
-        if self.conf.local == 1:
-            for i in [self.latitude, self.longitude, self.altitude]:
-                # Only include absolute features if enabled in config:
-                loc_feats.extend(
-                    generate_features(x=i, cf=self.conf,
-                                      include_absolute_features=self.conf.gen_gps_abs_stat_features)
-                )
+        for i in [self.latitude, self.longitude, self.altitude]:
+            # Only include absolute features if enabled in config:
+            loc_feats.extend(
+                generate_features(x=i, cf=self.conf,
+                                  include_absolute_features=self.conf.gen_gps_abs_stat_features)
+            )
 
-            for i in [self.course, self.speed, self.hacc, self.vacc]:
-                loc_feats.extend(generate_features(x=i, cf=self.conf))
-
-            loc_feats.extend(calculate_space_features(self))
+        for i in [self.course, self.speed, self.hacc, self.vacc]:
+            loc_feats.extend(generate_features(x=i, cf=self.conf))
 
         return loc_feats
-
-    def gen_time_features(self, latest_event: Dict[str, Union[datetime, float, str, None]]) \
-            -> List[float]:
-        """
-        Generate time-based features (namely from calculate_time_features()).
-        """
-
-        latest_stamp = latest_event[self.conf.stamp_field_name]
-
-        return list(calculate_time_features(latest_stamp))
