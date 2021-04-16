@@ -27,7 +27,42 @@ import config
 import features
 import gps
 import utils
+from base import BaseDataProcessor
 from mobiledata import MobileData
+
+
+class Location(BaseDataProcessor):
+    """
+    Class for processing data for a Location model and finding location types, etc.
+    """
+
+    def __init__(self, conf: config.Config, locations_filename: str = None):
+        """
+        Override the default initializer to set up other location specific items, such as location
+        mappings, the locations filename, and the classifier.
+
+        Parameters
+        ----------
+        conf : config.Config
+            An AL Config object that has been loaded with the configuration to use
+            Gets attached to this object
+        locations_filename : str
+            Path to the locations file to use which contains location->type tuples
+        """
+
+        super().__init__(conf)
+
+        # Set up default location mappings:
+        self.lmappings = dict()
+        self.lmappings['other'] = 'other'
+
+        # Create the location classifier:
+        self.clf = RandomForestClassifier(n_estimators=50,
+                                          bootstrap=True,
+                                          criterion="entropy",
+                                          class_weight="balanced",
+                                          max_depth=5,
+                                          n_jobs=self.conf.loc_n_jobs)
 
 
 class OLDLocation:
