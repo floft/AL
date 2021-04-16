@@ -443,7 +443,7 @@ def generate_features(x, cf: config.Config, include_absolute_features=True):
     return flist
 
 
-def calculate_time_features(st, dt: datetime.datetime) -> Tuple[int, int, int, int, int]:
+def calculate_time_features(dt: datetime.datetime) -> Tuple[int, int, int, int, int]:
     """
     Calculate time features for one window of sensor data.
     """
