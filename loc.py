@@ -341,9 +341,9 @@ class Location(BaseDataProcessor):
 
         xpoint = list()
 
-        xpoint.extend(Location.gen_motion_sensor_features(st))
+        xpoint.extend(Location.default_motion_sensor_features(st))
 
-        xpoint.extend(Location.gen_location_sensor_features(st))
+        xpoint.extend(Location.default_location_sensor_features(st))
 
         xpoint.extend(features.calculate_space_features(st))
 

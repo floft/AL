@@ -384,7 +384,7 @@ class BaseDataProcessor(ABC):
         pass
 
     @staticmethod
-    def gen_motion_sensor_features(st: 'BaseDataProcessor', use_lowpass_filter: bool = False) \
+    def default_motion_sensor_features(st: 'BaseDataProcessor', use_lowpass_filter: bool = False) \
             -> List[float]:
         """
         Helper default method.
@@ -417,7 +417,7 @@ class BaseDataProcessor(ABC):
         return motion_feats
 
     @staticmethod
-    def gen_location_sensor_features(st: 'BaseDataProcessor') -> List[float]:
+    def default_location_sensor_features(st: 'BaseDataProcessor') -> List[float]:
         """
         Helper default method.
 
