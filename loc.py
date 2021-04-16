@@ -301,6 +301,14 @@ class Location(BaseDataProcessor):
 
         return True
 
+    def create_point(self, latest_event: Dict[str, Union[datetime, float, str, None]]) \
+            -> List[float]:
+        """
+        Implement create_point by using the static method on our `self` object.
+        """
+
+        return self.create_point_static(self, latest_event)
+
     @staticmethod
     def create_point_static(
             st: BaseDataProcessor,
@@ -333,9 +341,9 @@ class Location(BaseDataProcessor):
 
         xpoint = list()
 
-        xpoint.extend(st.gen_motion_sensor_features(latest_event))
+        xpoint.extend(Location.gen_motion_sensor_features(st))
 
-        xpoint.extend(st.gen_location_sensor_features(latest_event))
+        xpoint.extend(Location.gen_location_sensor_features(st))
 
         xpoint.extend(features.calculate_space_features(st))
 
