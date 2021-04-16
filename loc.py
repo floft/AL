@@ -15,10 +15,10 @@
 import math
 import os.path
 from datetime import datetime, timedelta
+from statistics import mean
 from typing import Optional, Dict, Union, List
 
 import joblib
-from numpy import mean
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
@@ -245,7 +245,16 @@ class Location(BaseDataProcessor):
             The feature vector created for the window
         """
 
-        pass
+        # Find the location type for the mean lat/lon values from the window:
+        loc_type = self.get_location_type(mean(self.latitude), mean(self.longitude))
+
+        # If the location type is valid, append the feature vector and the mapping of the type to
+        # our training data:
+        if loc_type != 'None':
+            self.xdata.append(feats)
+
+            y_value = self.map_location_name(loc_type)
+            self.ydata.append(y_value)
 
     @staticmethod
     def valid_location_data(latitude: List[float], longitude: List[float], altitude: List[float]) \
