@@ -15,8 +15,7 @@ from typing import Optional, Dict, Union, List
 
 import config
 import utils
-from features import generate_features, twod_features, calculate_space_features, \
-    calculate_time_features
+from features import generate_features, calculate_space_features, calculate_time_features
 from mobiledata import MobileData
 
 
