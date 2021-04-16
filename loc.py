@@ -36,7 +36,7 @@ class Location(BaseDataProcessor):
     Class for processing data for a Location model and finding location types, etc.
     """
 
-    def __init__(self, conf: config.Config, locations_filename: str = None):
+    def __init__(self, conf: config.Config):
         """
         Override the default initializer to set up other location specific items, such as location
         mappings, the locations filename, and the classifier.
@@ -46,8 +46,6 @@ class Location(BaseDataProcessor):
         conf : config.Config
             An AL Config object that has been loaded with the configuration to use
             Gets attached to this object
-        locations_filename : str
-            Path to the locations file to use which contains location->type tuples
         """
 
         super().__init__(conf)
