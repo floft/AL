@@ -9,7 +9,7 @@ Code and data may not be used or distributed without permission from WSU.
 """
 import math
 import os
-from abc import ABC
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Union, List
 
@@ -159,14 +159,7 @@ class BaseDataProcessor(ABC):
                 if self.should_create_feats_for_window(event):
                     xpoint = self.create_point(event)
 
-                    place = self.generate_gps_features(mean(self.latitude),
-                                                       mean(self.longitude))
-
-                    if place != 'None':
-                        self.xdata.append(xpoint)
-
-                        yvalue = self.map_location_name(place)
-                        self.ydata.append(yvalue)
+                    self.process_window_feats(event, xpoint)
 
             prevdt = dt
 
@@ -435,3 +428,27 @@ class BaseDataProcessor(ABC):
             loc_feats.extend(generate_features(x=i, cf=self.conf))
 
         return loc_feats
+
+    @abstractmethod
+    def process_window_feats(self,
+                             latest_event: Dict[str, Union[datetime, float, str, None]],
+                             feats: List[float]
+                             ):
+        """
+        Called when we have a new window feature vector, so we can process it as needed.
+
+        You MUST implement this method in a sub-class.
+
+        This could be, for example, adding the values to `self.xdata` and adding a value to
+        `self.ydata`. Alternatively, you could do something like write out annotated events to a
+        file.
+
+        Parameters
+        ----------
+        latest_event : Dict[str, Union[datetime, float, str, None]]
+            The latest event in the window
+        feats : List[float]
+            The feature vector created for the window
+        """
+
+        pass
