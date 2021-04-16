@@ -54,6 +54,9 @@ class Location(BaseDataProcessor):
         self.lmappings = dict()
         self.lmappings['other'] = 'other'
 
+        # Set up the list of known locations:
+        self.locations = list()
+
         # Create the location classifier:
         self.clf = RandomForestClassifier(n_estimators=50,
                                           bootstrap=True,
@@ -61,6 +64,106 @@ class Location(BaseDataProcessor):
                                           class_weight="balanced",
                                           max_depth=5,
                                           n_jobs=self.conf.loc_n_jobs)
+
+    def read_location_mappings(self):
+        """
+        Generate a translate list for location names.
+        This function assumes that file loc.translate exists in the same directory as the code.
+        File loc.translate contains an arbitrary number of lines, each with syntax
+        "specificType mappedType". This function maps locations of specificType to the
+        corresponding, more general, mappedType.
+        """
+
+        with open('loc.translate', 'r') as file:
+            for line in file:
+                x = str(str(line).strip()).split(' ', 2)
+                self.lmappings[x[0]] = x[1]
+
+    def map_location_name(self, name: str) -> str:
+        """
+        Return the location type that is associated with a specific location name, using the stored
+        list of location mappings.
+
+        Parameters
+        ----------
+        name : str
+            The location type name to map
+
+        Returns
+        -------
+        str
+            The mapped location name (or 'other' if not found in mappings)
+        """
+
+        newname = self.lmappings.get(name)
+        if newname is None:
+            return 'other'
+        else:
+            return newname
+
+    def read_locations(self):
+        """
+        Read and store list of locations and corresponding location types.
+
+        This function assumes that file locations exists in the same directory as the code. File
+        locations contains an arbitrary number of lines, each with syntax
+        "latitude longitude type1 type2 type3". Open street maps return as many as three location
+        types associated with a lat,long location. They can provide alternate type names or levels
+        of abstraction.
+
+        In this function, only the first type is stored with the latitude and longitude.
+        """
+
+        if os.path.isfile('locations'):
+            with open('locations', 'r') as file:
+                for line in file:
+                    x = str(line.strip()).split(' ', 4)
+
+                    loc_tuple = list()
+
+                    loc_tuple.append(float(x[0]))
+                    loc_tuple.append(float(x[1]))
+
+                    loc_tuple.append(x[2])
+                    loc_tuple.append(x[3])
+                    loc_tuple.append(x[4])
+
+                    self.locations.append(loc_tuple)
+
+    def find_location(self, latitude: float, longitude: float) -> Optional[str]:
+        """
+        Determine whether the input location is close (within a threshold distance) to the
+        locations already stored in the external list. Return closest location within the threshold,
+        or None if none exist.
+
+        Parameters
+        ----------
+        latitude : float
+            Latitude value of location to find
+        longitude : float
+            Longitude value of location to find
+
+        Returns
+        -------
+        Optional[str]
+            The location type if found, else None
+        """
+
+        threshold = 0.005
+        find_loc = None
+
+        for loc_tuple in self.locations:
+            tlat = loc_tuple[0]
+            tlong = loc_tuple[1]
+
+            dist = math.sqrt(((tlat - latitude) * (tlat - latitude)) +
+                             ((tlong - longitude) * (tlong - longitude)))
+
+            if dist < threshold:
+                threshold = dist
+                find_loc = loc_tuple[2]
+
+        return find_loc
 
 
 class OLDLocation:
