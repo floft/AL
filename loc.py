@@ -16,7 +16,7 @@ import math
 import os.path
 from datetime import datetime, timedelta
 from statistics import mean
-from typing import Optional, Dict, Union, List
+from typing import Optional, Dict, Union, List, Tuple
 
 import joblib
 from sklearn.ensemble import RandomForestClassifier
@@ -300,6 +300,33 @@ class Location(BaseDataProcessor):
                     altitude[i] = valid_alt
 
         return True
+
+    @staticmethod
+    def generate_location_features(name: str) -> Tuple[int, int, int, int]:
+        """
+        Transform a location type into a vector using one-shot encoding.
+
+        The location types are house, road, work, or other.
+
+        Parameters
+        ----------
+        name : str
+            Name of the location type to be encoded.
+
+        Returns
+        -------
+        Tuple[int, int, int, int]
+            One-shot encoded values corresponding to (house, road, work, other) location type
+        """
+        
+        if name == 'house':
+            return 1, 0, 0, 0
+        elif name == 'road':
+            return 0, 1, 0, 0
+        elif name == 'work':
+            return 0, 0, 1, 0
+        else:
+            return 0, 0, 0, 1
 
 
 class OLDLocation:
