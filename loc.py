@@ -30,7 +30,7 @@ import utils
 from mobiledata import MobileData
 
 
-class Location:
+class OLDLocation:
 
     def __init__(self, conf: config.Config, filename: str = None):
         """ Constructor
