@@ -302,6 +302,48 @@ class Location(BaseDataProcessor):
         return True
 
     @staticmethod
+    def create_point_static(
+            st: BaseDataProcessor,
+            latest_event: Dict[str, Union[datetime, float, str, None]]
+    ) -> List[float]:
+        """
+        Create a feature vector based on the current sensor window values set on the `st` object.
+        This may be called for creating a point for the location model (by passing in `self` as
+        `st`), or alternatively by passing in another object inheriting from `BaseDataProcessor`
+        (for example, an AL object when we want to label a location).
+
+        We use this approach because we sometimes use Location to create a point using its own
+        values, and sometimes using the values stored in an AL object when labeling a location for
+        AL. This approach allows either method.
+
+        Parameters
+        ----------
+        st : BaseDataProcessor
+            A data processor object that has window sensor values (e.g. yaw, pitch, etc) set on it
+        latest_event : Dict[str, Union[datetime, float, str, None]]
+            The last event processed in the window
+
+        Returns
+        -------
+        List[float]
+            A feature vector created from the window
+        """
+
+        latest_stamp = latest_event[st.conf.stamp_field_name]
+
+        xpoint = list()
+
+        xpoint.extend(st.gen_motion_sensor_features(latest_event))
+
+        xpoint.extend(st.gen_location_sensor_features(latest_event))
+
+        xpoint.extend(features.calculate_space_features(st))
+
+        xpoint.extend(features.calculate_time_features(latest_stamp))
+
+        return xpoint
+
+    @staticmethod
     def generate_location_features(name: str) -> Tuple[int, int, int, int]:
         """
         Transform a location type into a vector using one-shot encoding.

@@ -359,14 +359,16 @@ class BaseDataProcessor(ABC):
 
         return True
 
+    @abstractmethod
     def create_point(self, latest_event: Dict[str, Union[datetime, float, str, None]]) \
             -> List[float]:
         """
-        Create a feature vector (point) at the end of a window. Uses sub-functions for traditional
-        major components, so you can override just those or this whole method as needed to create
-        the desired feature vector.
+        Create a feature vector (point) at the end of a window. You should implement this method
+        in subclasses to derive the desired feature vector you want for that type of model.
 
-        Default implementation creates feature vectors in the manner used by the Location model.
+        Helper methods `gen_motion_sensor_features()` and `gen_location_sensor_features()` can be
+        used as default implementations of generating the typical motion sensor and location sensor
+        based features used, respectively.
 
         Parameters
         ----------
@@ -379,53 +381,72 @@ class BaseDataProcessor(ABC):
             A feature vector created from the window
         """
 
-        latest_stamp = latest_event[self.conf.stamp_field_name]
+        pass
 
-        xpoint = list()
-
-        xpoint.extend(self.gen_motion_sensor_features(latest_event))
-
-        xpoint.extend(self.gen_location_sensor_features(latest_event))
-
-        xpoint.extend(calculate_space_features(self))
-
-        xpoint.extend(calculate_time_features(latest_stamp))
-
-        return xpoint
-
-    def gen_motion_sensor_features(self,
-                                   latest_event: Dict[str, Union[datetime, float, str, None]]) \
+    @staticmethod
+    def gen_motion_sensor_features(st: 'BaseDataProcessor', use_lowpass_filter: bool = False) \
             -> List[float]:
         """
-        Generate motion-sensor-based features for a window.
+        Helper default method.
+
+        Generate motion-sensor-based features for a window. Uses the window values set on the
+        `st` object to get sensor values.
+
+        Parameters
+        ----------
+        st : BaseDataProcessor
+            A data processor object that has window sensor values (e.g. yaw, pitch, etc) set on it
+        use_lowpass_filter : bool, default False
+            Whether to use a lowpass filter on the motion sensor vectors
+
+        Returns
+        -------
+        List[float]
+            A feature vector with the default motion sensor feature types
         """
 
         motion_feats = list()
 
-        for i in [self.yaw, self.pitch, self.roll, self.rotx, self.roty,
-                  self.rotz, self.accx, self.accy, self.accz, self.acctotal]:
-            motion_feats.extend(generate_features(x=i, cf=self.conf))
+        for i in [st.yaw, st.pitch, st.roll, st.rotx, st.roty,
+                  st.rotz, st.accx, st.accy, st.accz, st.acctotal]:
+            if use_lowpass_filter:
+                i = utils.butter_lowpass_filter(i)
+
+            motion_feats.extend(generate_features(x=i, cf=st.conf))
 
         return motion_feats
 
-    def gen_location_sensor_features(self,
-                                     latest_event: Dict[str, Union[datetime, float, str, None]]) \
-            -> List[float]:
+    @staticmethod
+    def gen_location_sensor_features(st: 'BaseDataProcessor') -> List[float]:
         """
-        Generate location-sensor-based features for a window.
+        Helper default method.
+
+        Generate location-sensor-based features for a window. Uses the window values set on the
+        `st` object to get sensor values.
+
+        Parameters
+        ----------
+        st : BaseDataProcessor
+            A data processor object that has window sensor values (e.g. latitude, longitude, etc)
+            set on it
+
+        Returns
+        -------
+        List[float]
+            A feature vector with the default location sensor feature types
         """
 
         loc_feats = list()
 
-        for i in [self.latitude, self.longitude, self.altitude]:
+        for i in [st.latitude, st.longitude, st.altitude]:
             # Only include absolute features if enabled in config:
             loc_feats.extend(
-                generate_features(x=i, cf=self.conf,
-                                  include_absolute_features=self.conf.gen_gps_abs_stat_features)
+                generate_features(x=i, cf=st.conf,
+                                  include_absolute_features=st.conf.gen_gps_abs_stat_features)
             )
 
-        for i in [self.course, self.speed, self.hacc, self.vacc]:
-            loc_feats.extend(generate_features(x=i, cf=self.conf))
+        for i in [st.course, st.speed, st.hacc, st.vacc]:
+            loc_feats.extend(generate_features(x=i, cf=st.conf))
 
         return loc_feats
 
