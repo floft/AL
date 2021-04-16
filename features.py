@@ -11,6 +11,7 @@
 import os
 import datetime
 import math
+from typing import Tuple
 
 import joblib
 import numpy as np
@@ -442,20 +443,32 @@ def generate_features(x, cf: config.Config, include_absolute_features=True):
     return flist
 
 
-def calculate_time_and_space_features(st, dt: datetime.datetime):
-    """ Calculate time and distance features for one window of sensor data.
+def calculate_time_features(st, dt: datetime.datetime) -> Tuple[int, int, int, int, int]:
     """
+    Calculate time features for one window of sensor data.
+    """
+
     month = dt.month
     dayofweek = dt.weekday()
     hours = dt.hour
     minutes = (dt.hour * 60) + dt.minute
     seconds = (dt.hour * 3600) + (dt.minute * 60) + dt.second
+
+    return month, dayofweek, hours, minutes, seconds
+
+
+def calculate_space_features(st) -> Tuple[float, float, float, float]:
+    """
+    Calculate space features for one window of sensor data.
+    """
+
     distance = math.sqrt(((st.maxlat - st.minlat) * (st.maxlat - st.minlat)) +
                          ((st.maxlong - st.minlong) * (st.maxlong - st.minlong)))
     hcr = heading_change_rate(st.course, distance)
     sr = stop_rate(st.latitude, st.longitude, distance)
     traj = trajectory(st.latitude, st.longitude)
-    return month, dayofweek, hours, minutes, seconds, distance, hcr, sr, traj
+
+    return distance, hcr, sr, traj
 
 
 def create_point(st, dt, filename, person_stats, clusters):
