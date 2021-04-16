@@ -15,7 +15,8 @@ from typing import Optional, Dict, Union, List
 
 import config
 import utils
-from features import calculate_time_and_space_features, generate_features, twod_features
+from features import generate_features, twod_features, calculate_space_features, \
+    calculate_time_features
 from mobiledata import MobileData
 
 
@@ -389,29 +390,15 @@ class BaseDataProcessor(ABC):
             A feature vector created from the window
         """
 
-        latest_stamp = latest_event[self.conf.stamp_field_name]
-
         xpoint = list()
-
-        month, dayofweek, hours, minutes, seconds, distance, hcr, sr, pt_trajectory = \
-            calculate_time_and_space_features(self, latest_stamp)
 
         xpoint.extend(self.gen_motion_sensor_features(latest_event))
 
         xpoint.extend(twod_features(self))
 
-        if st.conf.local == 1:
-            for i in [st.latitude, st.longitude, st.altitude]:
-                # Only include absolute features if enabled in config:
-                xpoint.extend(generate_features(x=i, cf=st.conf,
-                                                include_absolute_features=st.conf.gen_gps_abs_stat_features))
+        xpoint.extend(self.gen_location_sensor_features(latest_event))
 
-            for i in [st.course, st.speed, st.hacc, st.vacc]:
-                xpoint.extend(generate_features(x=i, cf=st.conf))
-
-            xpoint += [distance, hcr, sr, pt_trajectory]
-
-        xpoint += [month, dayofweek, hours, minutes, seconds]
+        xpoint.extend(self.gen_time_features(latest_event))
 
         if st.conf.sfeatures == 1:
             xpoint += person.calculate_person_features(filename, st, person_stats, clusters)
@@ -459,4 +446,29 @@ class BaseDataProcessor(ABC):
         Generate location-sensor-based features for a window.
         """
 
-        pass
+        loc_feats = list()
+
+        if self.conf.local == 1:
+            for i in [self.latitude, self.longitude, self.altitude]:
+                # Only include absolute features if enabled in config:
+                loc_feats.extend(
+                    generate_features(x=i, cf=self.conf,
+                                      include_absolute_features=self.conf.gen_gps_abs_stat_features)
+                )
+
+            for i in [self.course, self.speed, self.hacc, self.vacc]:
+                loc_feats.extend(generate_features(x=i, cf=self.conf))
+
+            loc_feats.extend(calculate_space_features(self))
+
+        return loc_feats
+
+    def gen_time_features(self, latest_event: Dict[str, Union[datetime, float, str, None]]) \
+            -> List[float]:
+        """
+        Generate time-based features (namely from calculate_time_features()).
+        """
+
+        latest_stamp = latest_event[self.conf.stamp_field_name]
+
+        return list(calculate_time_features(latest_stamp))
