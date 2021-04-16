@@ -14,8 +14,8 @@
 
 import math
 import os.path
-from datetime import datetime
-from typing import Optional, Dict, Union
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Union, List
 
 import joblib
 from numpy import mean
@@ -164,6 +164,133 @@ class Location(BaseDataProcessor):
                 find_loc = loc_tuple[2]
 
         return find_loc
+
+    def get_location_type(self, latitude: float, longitude: float) -> str:
+        """
+        Determine the location type for a given latitude/longitude location.
+
+        If the location is in the existing list of locations, return its type. Otherwise, try to
+        reverse geocode the location, then add it to the list of locations and return the found
+        type.
+
+        Parameters
+        ----------
+        latitude : float
+            Latitude of the location to get type of
+        longitude : float
+            Longitude of the location to get type of
+
+        Returns
+        -------
+        str
+            The type of the location (not translated)
+        """
+
+        existing_loc_type = self.find_location(latitude, longitude)
+
+        if existing_loc_type is not None:
+            return existing_loc_type
+        else:
+            # Couldn't find existing location, so reverse-geocode it:
+            gps_loc = list()
+
+            gps_loc.append(latitude)
+            gps_loc.append(longitude)
+
+            # Get the reverse-geocoded location type
+            gps_type = gps.get_location_type(gps_loc, 'locations')
+
+            gps_loc.append(gps_type)
+            gps_loc.append(gps_type)
+            gps_loc.append(gps_type)
+
+            # Add the location tuple to the list:
+            self.locations.append(gps_loc)
+
+            return gps_type
+
+    def new_window(self, delta: timedelta) -> bool:
+        """
+        Override the new_window method to ignore annotate value that base looks at.
+        i.e. start new window if there is a 2-second gap, we just generated a window, or
+        we've reached a full `samplesize` events in the window.
+        """
+
+        return delta.seconds > 2 or self.generated_window or self.count % self.conf.samplesize == 0
+
+    def should_create_feats_for_window(self,
+                                       latest_event: Dict[str, Union[datetime, float, str, None]]) \
+            -> bool:
+        """
+        Override to check that we have valid location data in the window.
+        """
+
+        return self.valid_location_data(self.latitude, self.longitude, self.altitude)
+
+    def process_window_feats(self,
+                             latest_event: Dict[str, Union[datetime, float, str, None]],
+                             feats: List[float]
+                             ):
+        """
+        Called when we have a feature vector at end of window.
+
+        Try to find the GPS location type. If it's not `'None'`, then append the feature vector
+        to `self.xdata` and add the location type mapping to `self.ydata`.
+
+        Parameters
+        ----------
+        latest_event : Dict[str, Union[datetime, float, str, None]]
+            The latest event in the window. Not used here
+        feats : List[float]
+            The feature vector created for the window
+        """
+
+        pass
+
+    @staticmethod
+    def valid_location_data(latitude: List[float], longitude: List[float], altitude: List[float]) \
+            -> bool:
+        """
+        Check if location data (namely latitude) is valid in the provided lists of sensor values.
+
+        If there are valid latitude values, then replace any invalid location points with the first
+        valid one.
+
+        Parameters
+        ----------
+        latitude : List[float]
+            Latitude values to check
+        longitude : List[float]
+            Longitude values to check
+        altitude : List[float]
+            Altitude values to check
+
+        Returns
+        -------
+        bool
+            True if at least one valid latitude was found
+        """
+
+        n = len(latitude)
+
+        valid_lat = valid_long = valid_alt = 0.0
+
+        for i in range(n):
+            if -90.0 < latitude[i] < 90.0:
+                valid_lat = latitude[i]
+                valid_long = longitude[i]
+                valid_alt = altitude[i]
+
+        if valid_lat == 0.0:
+            return False
+        else:
+            for i in range(n):
+                if latitude[i] <= -90.0 or latitude[i] >= 90.0:
+                    latitude[i] = valid_lat
+                    longitude[i] = valid_long
+                    altitude[i] = valid_alt
+
+        return True
 
 
 class OLDLocation:
