@@ -89,6 +89,9 @@ class BaseDataProcessor(ABC):
         # Count for feature extraction:
         self.count = 0
 
+        # Whether we just created a feature vector at the end of a window:
+        self.generated_window = False
+
         # Create an attribute for setting the classifier to use:
         # You should override this in an inherited initializer if you plan to use a classifier
         self.clf = None
@@ -132,7 +135,7 @@ class BaseDataProcessor(ABC):
 
         prevdt = None  # type: Optional[datetime]
 
-        gen = self.resetvars()
+        self.resetvars()
 
         # Loop over all event rows in the input file:
         for event in in_data.rows_dict:
@@ -146,15 +149,15 @@ class BaseDataProcessor(ABC):
             delta = dt - prevdt
 
             # Check if we should start a new window (reset window lists):
-            if self.new_window(delta, gen):
-                gen = self.resetvars()
+            if self.new_window(delta):
+                self.resetvars()
 
             # Update the sensor values for this window:
             self.update_from_event(event)
 
             # Check if this should be the end of a window:
             if self.end_window(event):
-                gen = 1
+                self.generated_window = True
 
                 if self.should_create_feats_for_window(event):
                     xpoint = self.create_point(event)
@@ -198,23 +201,21 @@ class BaseDataProcessor(ABC):
         self.minlong = 180.0
         self.maxlong = -180.0
 
-        return 0
+        # Reset the flag for when we just generated a window:
+        self.generated_window = False
 
-    def new_window(self, delta: timedelta, gen: int) -> bool:
+    def new_window(self, delta: timedelta) -> bool:
         """
         Determine if a new window should be created.
 
         TODO: Check on this code and clean up as applicable. Make sure it's doing what we expect
         Some things to check:
-        - Switch `gen` to a bool
         - Should we use something else instead of `conf.annotate`? e.g. checking for annotate mode?
 
         Parameters
         ----------
         delta : timedelta
             The time since the last event
-        gen : int
-            If 1, indicates we just finished a window, so we should restart now
 
         Returns
         -------
@@ -222,7 +223,7 @@ class BaseDataProcessor(ABC):
             True if it is time to start a new window
         """
 
-        return delta.seconds > 2 or gen == 1 or \
+        return delta.seconds > 2 or self.generated_window or \
             (self.conf.annotate > 0 and self.count % self.conf.samplesize == 0)
 
     def end_window(self, latest_event: Dict[str, Union[datetime, float, str, None]]) -> bool:
