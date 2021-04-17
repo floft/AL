@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest import TestCase
 from unittest.mock import Mock
 
@@ -53,23 +54,21 @@ class LocationLabelLocTest(TestCase):
         test_al.hacc = [22.592997936520113, 25.332248443829698, 16.629675669378507, 10.927633865659319, 11.560839234746618, 14.409677626228634, 23.759149321008934, 13.538402787000809, 16.997563118024964, 22.94508413815179]
         test_al.vacc = [14.33151360551745, 13.064804053288855, 20.095012424826972, 26.14868844300875, 11.348279679080182, 21.913967271022265, 13.886057128399077, 17.249532688723097, 28.46768752255568, 12.443856685743517]
 
+        test_al.minlat = 45.16015407024762
+        test_al.maxlat = 45.9327322235666
+        test_al.minlong = -115.99332137643903
+        test_al.maxlong = -115.07208321504989
+
         # Create a mock location classifier to check passed values:
         test_locclf = Mock()
         test_locclf.predict.return_value = ['road']
 
-        test_al.locclf = test_locclf
+        test_loc.clf = test_locclf
 
         # Set up other parameters:
-        test_distance = 1.2023130844274352
-        test_hcr = 7.4855710351734
-        test_sr = 0.8317301150192666
-        test_trajectory = 0.8729401569671781
-
-        test_month = 1
-        test_dayofweek = 3
-        test_hours = 12
-        test_minutes = 720
-        test_seconds = 43200
+        test_latest_event = {
+            'stamp': datetime(2021, 1, 7, 12, 0, 0)  # should have dayofweek = 3 and appropriate hour/min/sec values
+        }
 
         # Set up expected values:
         expected_locclf_predict_data = ([
@@ -119,15 +118,7 @@ class LocationLabelLocTest(TestCase):
         # act
         output = test_loc.label_loc(
             st=test_al,
-            distance=test_distance,
-            hcr=test_hcr,
-            sr=test_sr,
-            trajectory=test_trajectory,
-            month=test_month,
-            dayofweek=test_dayofweek,
-            hours=test_hours,
-            minutes=test_minutes,
-            seconds=test_seconds
+            latest_event=test_latest_event
         )
 
         # assert
@@ -179,23 +170,21 @@ class LocationLabelLocTest(TestCase):
         test_al.hacc = [22.592997936520113, 25.332248443829698, 16.629675669378507, 10.927633865659319, 11.560839234746618, 14.409677626228634, 23.759149321008934, 13.538402787000809, 16.997563118024964, 22.94508413815179]
         test_al.vacc = [14.33151360551745, 13.064804053288855, 20.095012424826972, 26.14868844300875, 11.348279679080182, 21.913967271022265, 13.886057128399077, 17.249532688723097, 28.46768752255568, 12.443856685743517]
 
+        test_al.minlat = 45.16015407024762
+        test_al.maxlat = 45.9327322235666
+        test_al.minlong = -115.99332137643903
+        test_al.maxlong = -115.07208321504989
+
         # Create a mock location classifier to check passed values:
         test_locclf = Mock()
         test_locclf.predict.return_value = ['road']
 
-        test_al.locclf = test_locclf
+        test_loc.clf = test_locclf
 
         # Set up other parameters:
-        test_distance = 1.2023130844274352
-        test_hcr = 7.4855710351734
-        test_sr = 0.8317301150192666
-        test_trajectory = 0.8729401569671781
-
-        test_month = 1
-        test_dayofweek = 3
-        test_hours = 12
-        test_minutes = 720
-        test_seconds = 43200
+        test_latest_event = {
+            'stamp': datetime(2021, 1, 7, 12, 0, 0)  # should have dayofweek = 3 and appropriate hour/min/sec values
+        }
 
         # Set up expected values:
         expected_locclf_predict_data = ([
@@ -245,15 +234,7 @@ class LocationLabelLocTest(TestCase):
         # act
         output = test_loc.label_loc(
             st=test_al,
-            distance=test_distance,
-            hcr=test_hcr,
-            sr=test_sr,
-            trajectory=test_trajectory,
-            month=test_month,
-            dayofweek=test_dayofweek,
-            hours=test_hours,
-            minutes=test_minutes,
-            seconds=test_seconds
+            latest_event=test_latest_event
         )
 
         # assert
