@@ -14,6 +14,7 @@
 
 import math
 import os.path
+import warnings
 from datetime import datetime, timedelta
 from statistics import mean
 from typing import Optional, Dict, Union, List, Tuple
@@ -58,12 +59,29 @@ class Location(BaseDataProcessor):
         self.locations = list()
 
         # Create the location classifier:
-        self.clf = RandomForestClassifier(n_estimators=50,
-                                          bootstrap=True,
-                                          criterion="entropy",
-                                          class_weight="balanced",
-                                          max_depth=5,
-                                          n_jobs=self.conf.loc_n_jobs)
+        # TODO: Actually do this during training/cross-validation, not in general
+        # We may want to use an existing model and be able to check if this is None (e.g. in label_loc)
+        # self.clf = RandomForestClassifier(n_estimators=50,
+        #                                   bootstrap=True,
+        #                                   criterion="entropy",
+        #                                   class_weight="balanced",
+        #                                   max_depth=5,
+        #                                   n_jobs=self.conf.loc_n_jobs)
+
+    def load_location_model(self):
+        """
+        Load existing location model (at path determined by the `conf.modelpath`) and set it on this
+        object.
+        """
+
+        filename = os.path.join(self.conf.modelpath, 'locmodel.pkl')
+
+        if not os.path.isfile(filename):
+            msg = f"No location model at {filename} - will always predict location 'other'"
+            warnings.warn(msg)
+            print(msg)
+        else:
+            self.clf = joblib.load(filename)
 
     def read_location_mappings(self):
         """
@@ -350,6 +368,46 @@ class Location(BaseDataProcessor):
         xpoint.extend(features.calculate_time_features(latest_stamp))
 
         return xpoint
+
+    def label_loc(
+            self,
+            st: BaseDataProcessor,
+            latest_event: Dict[str, Union[datetime, float, str, None]]
+    ) -> str:
+        """
+        Use the location classifier on this Location object to find the location for the sensor
+        window contained in the sensor value lists of `st`.
+
+        This is done by generating the feature vector from the window values and using the model
+        to classify it.
+
+        NOTE: You will want to run `load_location_model()` first to load the classifier on this
+        object. Otherwise we will always return the 'other' location type.
+
+        Parameters
+        ----------
+        st : BaseDataProcessor
+            A data processor object that has window sensor values (e.g. yaw, pitch, etc) set on it
+        latest_event : Dict[str, Union[datetime, float, str, None]]
+            The latest event in the window
+
+        Returns
+        -------
+        str
+            The location type found by the model
+        """
+
+        # Just return the default 'other' location type if model is not loaded
+        if self.clf is None:
+            return 'other'
+
+        # Create the feature vector for the window:
+        xpoint = self.create_point_static(st, latest_event)
+
+        # Predict and return the label for the data:
+        labels = self.clf.predict([xpoint])
+
+        return labels[0]
 
     @staticmethod
     def generate_location_features(name: str) -> Tuple[int, int, int, int]:
