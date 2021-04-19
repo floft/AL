@@ -580,8 +580,8 @@ if __name__ == "__main__":
         loc.read_location_mappings()
     locations_index = loc.read_locations()
     if cf.mode in [config.MODE_TRAIN_MODEL, config.MODE_CROSS_VALIDATION]:
-        for datafile in cf.files:
-            loc.extract_features(datafile)
+        loc = collect_features(cf.files, loc)
+
         print('update', len(loc.locations))
         gps.update_locations(loc.locations, 'locations')
         if cf.mode == config.MODE_TRAIN_MODEL:
