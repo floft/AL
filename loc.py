@@ -15,7 +15,8 @@
 import math
 import os.path
 from datetime import datetime
-from typing import Optional, Dict, Union
+from multiprocessing import Queue, Process
+from typing import Optional, Dict, Union, List
 
 import joblib
 from numpy import mean
@@ -477,6 +478,93 @@ class Location:
         return True
 
 
+def parallel_extract_features(response_queue: Queue, base_filename: str, loc_obj: Location):
+    """
+    Run extract_features() on the given filename using the Location object passed in, then pass
+    the gathered data to the response queue for processing back in the main process.
+
+    Note: Technically this function will be given a copy of the original Location object when the
+    function is called as the target of a Process. Theoretically this means that it will have the
+    same initial setup as the original object in the main process (e.g. config, etc set). However,
+    any changes to this copy of the object will not propagate to any of the other copies outside
+    this process. (This is a good thing, as we are just returning results for this one file via the
+    queue - just something to note.)
+
+    Parameters
+    ----------
+    response_queue : Queue
+        Multiprocessing queue for returning the gathered data from this file.
+    base_filename : str
+        The base filename used for extract_features() for the file we are looking at
+    loc_obj : Location
+        A Location object with all preparation set on it (e.g. config, mappings, etc) and which we
+        will use to run the extract_features() for this one file.
+    """
+
+    print('extracting', base_filename)
+
+    loc_obj.extract_features(base_filename)
+
+    print('extracted', base_filename)
+
+    response_queue.put((loc_obj.xdata, loc_obj.ydata, base_filename))
+
+    return
+
+
+def collect_features(files: List[str], loc_obj: Location) -> Location:
+    """
+    Run `parallel_extract_features()` using the given Location object on the specified files, with
+    each file extracted in a separate `Process`.
+
+    The Location object will be duplicated to a separate `Process` for each file, where it will
+    be used to extract features on that file. (This should preserve whatever configuration setup
+    has been done for that Location object, such as loading config and any location mappings. After
+    that copy of the Location object extracts features, its xdata, ydata, and locations values will
+    be sent back via the response queue and added to the main (original) Location object in this
+    original process, for later use.
+
+    Parameters
+    ----------
+    files : List[str]
+        The base filenames to extract features for
+    loc_obj : Location
+        The original Location object that is cloned into each sub-process and also which will have
+        the extracted data set on for later use in this main process.
+
+    Returns
+    -------
+    Location
+        The modified Location object with its `xdata`, `ydata`, and `locations` properties updated
+    """
+
+    feature_responses = Queue()
+    feature_processes = list()
+
+    # Set up the feature extraction Process objects:
+    for base_filename in files:
+        feature_processes.append(Process(target=parallel_extract_features,
+                                         args=(feature_responses, base_filename, loc_obj)))
+
+    # Actually start the processes to let them run:
+    for i in range(len(feature_processes)):
+        feature_processes[i].start()
+
+    # Now get the results of the processes from the queue:
+    for i in range(len(feature_processes)):
+        tmp_xdata, tmp_ydata, datafile = feature_responses.get()
+        loc_obj.xdata.extend(tmp_xdata)
+        loc_obj.ydata.extend(tmp_ydata)
+
+        print('{} of {} done: {}'.format(i + 1, len(feature_processes), datafile))
+
+    # Join the processes back to finish up:
+    for i in range(len(feature_processes)):
+        feature_processes[i].join()
+
+    return loc_obj
+
+
 if __name__ == "__main__":
     """ Syntax is python loc.py trainingdata. The set of latitude longitude
     locations with corresponding ground truth location type is assumed to be
@@ -491,8 +579,8 @@ if __name__ == "__main__":
         loc.read_location_mappings()
     locations_index = loc.read_locations()
     if cf.mode in [config.MODE_TRAIN_MODEL, config.MODE_CROSS_VALIDATION]:
-        for datafile in cf.files:
-            loc.extract_features(datafile)
+        loc = collect_features(cf.files, loc)
+
         print('update', len(loc.locations))
         gps.update_locations(loc.locations, 'locations')
         if cf.mode == config.MODE_TRAIN_MODEL:
