@@ -89,5 +89,4 @@ def get_location_type(location, locationsfile):
         if loc_type == 'other' or loc_type == 'Other':
             return loc_type
         else:
-            gps_read_locations(locationsfile)
             return loc_type
