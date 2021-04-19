@@ -507,7 +507,7 @@ def parallel_extract_features(response_queue: Queue, base_filename: str, loc_obj
 
     print('extracted', base_filename)
 
-    response_queue.put((loc_obj.xdata, loc_obj.ydata, base_filename, loc_obj.locations))
+    response_queue.put((loc_obj.xdata, loc_obj.ydata, base_filename))
 
     return
 
@@ -552,7 +552,7 @@ def collect_features(files: List[str], loc_obj: Location) -> Location:
 
     # Now get the results of the processes from the queue:
     for i in range(len(feature_processes)):
-        tmp_xdata, tmp_ydata, datafile, tmp_locations = feature_responses.get()
+        tmp_xdata, tmp_ydata, datafile = feature_responses.get()
         loc_obj.xdata.extend(tmp_xdata)
         loc_obj.ydata.extend(tmp_ydata)
 
