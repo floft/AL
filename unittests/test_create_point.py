@@ -389,7 +389,7 @@ class CreatePointTest(TestCase):
         test_loc = Mock(spec=Location)
         test_loc.generate_gps_features.return_value = 'motorway'
         test_loc.map_location_name.return_value = 'road'
-        test_loc.generate_location_features.return_value = (0, 1, 0, 0)
+        test_loc.generate_location_features.return_value = (0, 1, 0, 0, 0)
 
         test_al.location = test_loc
 
@@ -650,7 +650,7 @@ class CreatePointTest(TestCase):
         test_loc = Mock(spec=Location)
         test_loc.generate_gps_features.return_value = 'restaurant'
         test_loc.map_location_name.return_value = 'service'
-        test_loc.generate_location_features.return_value = (0, 1, 0, 0)
+        test_loc.generate_location_features.return_value = (0, 0, 0, 1, 0)
 
         test_al.location = test_loc
 
