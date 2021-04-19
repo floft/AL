@@ -29,18 +29,6 @@ def get_datetime(date, dt_time):
     return dt
 
 
-def clean_range(value, low, high):
-    """ Clean up values that fall outside of a specified range.
-    Replace outliers with the range min or max.
-    """
-    if value > high:
-        return high
-    elif value < low:
-        return low
-    else:
-        return value
-
-
 def clean(value, low, high):
     """ Clean up values that fall outside of definable range. Replace outliers
     with mean for the feature.
