@@ -555,7 +555,6 @@ def collect_features(files: List[str], loc_obj: Location) -> Location:
         tmp_xdata, tmp_ydata, datafile, tmp_locations = feature_responses.get()
         loc_obj.xdata.extend(tmp_xdata)
         loc_obj.ydata.extend(tmp_ydata)
-        loc_obj.locations.extend(tmp_locations)
 
         print('{} of {} done: {}'.format(i + 1, len(feature_processes), datafile))
 

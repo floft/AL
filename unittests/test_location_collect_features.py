@@ -210,6 +210,7 @@ class LocationCollectFeaturesTest(TestCase):
                 6, 1, 15, 943, 56609
             ]
         ]
+
         expected_y_data = [
             'road',
             'road',
@@ -221,11 +222,17 @@ class LocationCollectFeaturesTest(TestCase):
             'road'
         ]
 
+        # Expect only the original location (none pulled from sub-processes):
+        expected_locations = [
+            [40.0, -117.0, 'motorway', 'administrative', 'boundary'],
+        ]
+
         # act
         output_loc = collect_features(test_data_basenames, test_loc)
 
         actual_x_data = output_loc.xdata
         actual_y_data = output_loc.ydata
+        actual_locations = output_loc.locations
 
         # assert
         self.assertEqual(len(actual_x_data), len(expected_x_data))
@@ -241,3 +248,11 @@ class LocationCollectFeaturesTest(TestCase):
                 self.assertAlmostEqual(actual_value, expected_value, places=8)
 
         self.assertEqual(actual_y_data, expected_y_data)
+
+
+        self.assertEqual(len(actual_locations), len(expected_locations))
+
+        for loc_index, actual_location in enumerate(actual_locations):
+            expected_location = expected_locations[loc_index]
+
+            self.assertEqual(actual_location, expected_location)
