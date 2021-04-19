@@ -86,7 +86,5 @@ def get_location_type(location, locationsfile):
     else:
         raw = description.raw
         loc_type = raw['type']
-        if loc_type == 'other' or loc_type == 'Other':
-            return loc_type
-        else:
-            return loc_type
+
+        return loc_type
