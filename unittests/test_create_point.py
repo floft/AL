@@ -502,7 +502,7 @@ class CreatePointTest(TestCase):
             2,
 
             # Location features (for road):
-            0, 1, 0, 0
+            0, 1, 0, 0, 0
         ]
 
         # act
@@ -648,8 +648,8 @@ class CreatePointTest(TestCase):
 
         # Mock the location object:
         test_loc = Mock(spec=Location)
-        test_loc.generate_gps_features.return_value = 'motorway'
-        test_loc.map_location_name.return_value = 'road'
+        test_loc.generate_gps_features.return_value = 'restaurant'
+        test_loc.map_location_name.return_value = 'service'
         test_loc.generate_location_features.return_value = (0, 1, 0, 0)
 
         test_al.location = test_loc
@@ -707,8 +707,8 @@ class CreatePointTest(TestCase):
         mock_kmeans_predict.side_effect = sorted_kmeans_predict_values
 
         expected_generate_gps_features_args = (45.556713987256174, -115.57706709612395)
-        expected_map_location_name_args = ('motorway', )
-        expected_generate_location_features_args = ('road', )
+        expected_map_location_name_args = ('restaurant', )
+        expected_generate_location_features_args = ('service', )
 
         expected_output = [
             # statistical features for motion:
@@ -762,8 +762,8 @@ class CreatePointTest(TestCase):
             1,
             2,
 
-            # Location features (for road):
-            0, 1, 0, 0
+            # Location features (for service):
+            0, 0, 0, 1, 0
         ]
 
         # act
