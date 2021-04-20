@@ -80,11 +80,11 @@ def get_location_type(location, locationsfile):
 
     address = get_address(location)
     if address == 'None' or address is None:
-        return 'Other'
+        return 'other'
     description = geolocator.geocode(address, timeout=None)
     print('description', description)
     if description == 'None' or description is None:
-        return 'Other'
+        return 'other'
     else:
         raw = description.raw
         loc_type = raw['type']
