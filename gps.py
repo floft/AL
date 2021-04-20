@@ -113,12 +113,12 @@ def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
     # Read the existing locations file:
     gps_locs = gps_read_locations(locations_file)
 
-    print_features = True  # print high-level features
+    print_loc_features = True  # print high-level features
     count = 0
 
     with open(in_file, 'r') as input_file:
         for line in input_file:
-            if count >= start and count <= end:
+            if start <= count <= end:
                 location = str(str(line).strip()).split(' ', 2)
 
                 print('location ', location, 'count', count)
@@ -132,12 +132,12 @@ def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
                         description = geolocator.geocode(address, timeout=None)
                         print('description', description)
 
-                        if address == 'None' or description == 'None' or description == None:
+                        if address == 'None' or description == 'None' or description is None:
                             print_features(location[0], location[1], 'other', 'other')
                         else:
                             raw = description.raw
 
-                            if print_features:
+                            if print_loc_features:
                                 print_features(location[0], location[1], raw['type'], raw['class'])
                             else:
                                 print(raw['type'], ' ', raw['class'])
@@ -147,6 +147,10 @@ def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
                         continue  # don't add to our count
 
             count += 1
+
+            # Stop when we reach end, to avoid looping through unnecessary lines:
+            if count > end:
+                break
 
     update_locations(gps_locs, locations_file)
 
