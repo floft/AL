@@ -117,7 +117,36 @@ def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
     count = 0
 
     with open(in_file, 'r') as input_file:
-        pass
+        for line in input_file:
+            if count >= start and count <= end:
+                location = str(str(line).strip()).split(' ', 2)
+
+                print('location ', location, 'count', count)
+
+                loc = gps_find_location(location[0], location[1])  # look in file
+
+                if loc is None:
+                    address = get_address(location)
+
+                    try:
+                        description = geolocator.geocode(address, timeout=None)
+                        print('description', description)
+
+                        if address == 'None' or description == 'None' or description == None:
+                            print_features(location[0], location[1], 'other', 'other')
+                        else:
+                            raw = description.raw
+
+                            if print_features:
+                                print_features(location[0], location[1], raw['type'], raw['class'])
+                            else:
+                                print(raw['type'], ' ', raw['class'])
+                    except:
+                        print('Error, geocode failed')
+
+                        continue  # don't add to our count
+
+            count += 1
 
     update_locations(gps_locs, locations_file)
 
