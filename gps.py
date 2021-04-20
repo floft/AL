@@ -54,7 +54,8 @@ def gps_read_locations(lfile):
                 gps_tuple.append(x[3])
                 gps_tuple.append(x[4])
                 gps_locations.append(gps_tuple)
-    return
+
+    return gps_locations
 
 
 def update_locations(locations, locationsfile):
@@ -108,3 +109,14 @@ if __name__ == '__main__':
                         help="End position in the file (default %(default)s)")
 
     args = parser.parse_args()
+
+    # Read the existing locations file:
+    gps_locs = gps_read_locations(args.locations_file)
+
+    print_features = True  # print high-level features
+    count = 0
+
+    with open(args.in_file, 'r') as input_file:
+        pass
+
+    update_locations(gps_locs, args.locations_file)
