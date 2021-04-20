@@ -13,6 +13,7 @@
 
 
 import os
+from argparse import ArgumentParser
 from operator import itemgetter
 
 from geopy.geocoders import Nominatim
@@ -88,3 +89,22 @@ def get_location_type(location, locationsfile):
         loc_type = raw['type']
 
         return loc_type
+
+
+if __name__ == '__main__':
+    """
+    Run script to reverse-geocode multiple locations in lat/long file if called as a script.
+    """
+
+    parser = ArgumentParser(description="Reverse-geocode locations in a lat/long file")
+
+    parser.add_argument('in_file', type=str, default='latlong',
+                        help="Input file (default %(default)s)")
+    parser.add_argument('start', type=int, default=0,
+                        help="Start position in the file (default %(default)s)")
+    parser.add_argument('locations_file', type=str, default='locations',
+                        help="Output file to write geocoded locations to (default %(default)s)")
+    parser.add_argument('end', type=int, default=27500000,
+                        help="End position in the file (default %(default)s)")
+
+    args = parser.parse_args()
