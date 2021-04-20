@@ -92,6 +92,36 @@ def get_location_type(location, locationsfile):
         return loc_type
 
 
+def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
+    """
+    Reverse-geocode the lat/long pairs in the input file using Nominatim, and write the geocoded
+    tuples to the output locations file. Only geocode those lines in the input between start and
+    end.
+
+    Parameters
+    ----------
+    in_file : str
+        Name of the input lat/long pair file to read from (each row should be "lat long" values
+    locations_file : str
+        The locations file name to write the locations out to
+    start : int
+        Line number of in the input to start at
+    end : int
+        Line number of the input to end at
+    """
+
+    # Read the existing locations file:
+    gps_locs = gps_read_locations(locations_file)
+
+    print_features = True  # print high-level features
+    count = 0
+
+    with open(in_file, 'r') as input_file:
+        pass
+
+    update_locations(gps_locs, locations_file)
+
+
 if __name__ == '__main__':
     """
     Run script to reverse-geocode multiple locations in lat/long file if called as a script.
@@ -110,13 +140,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # Read the existing locations file:
-    gps_locs = gps_read_locations(args.locations_file)
-
-    print_features = True  # print high-level features
-    count = 0
-
-    with open(args.in_file, 'r') as input_file:
-        pass
-
-    update_locations(gps_locs, args.locations_file)
+    # Geocode the lat/long entries in the input file and write to location file:
+    geocode_lat_longs(args.in_file, args.start, args.location_file, args.end)
