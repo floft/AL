@@ -443,4 +443,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Geocode the lat/long entries in the input file and write to location file:
-    geocode_lat_longs(args.in_file, args.start, args.location_file, args.end)
+    geocode_lat_longs(args.in_file, args.location_file, args.start, args.end)
