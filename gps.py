@@ -10,11 +10,11 @@
 
 # Copyright (c) 2017. Washington State University (WSU). All rights reserved.
 # Code and data may not be used or distributed without permission from WSU.
-
-
+import math
 import os
 from argparse import ArgumentParser
 from operator import itemgetter
+from typing import Optional, List
 
 from geopy.geocoders import Nominatim
 
@@ -90,6 +90,41 @@ def get_location_type(location, locationsfile):
         loc_type = raw['type']
 
         return loc_type
+
+
+def gps_find_location(gps_locations: List[List], lat: float, long: float) -> Optional[str]:
+    """
+    Look in the list of gps_locations for one that is "close enough" to the provided lat,long
+    coordinate, and return its type (3rd value of tuple) if found.
+
+    Parameters
+    ----------
+    gps_locations: List[List]
+        A list of location tuples/lists (lat, long, type, ...)
+    lat : float
+        The latitude to search for
+    long : float
+        The longitude to search for
+
+    Returns
+    -------
+    Optional[str]
+        If a "close enough" location is found, return its type (3rd value of tuple). Otherwise,
+        return None.
+    """
+
+    threshold = 0.0005
+
+    for loc_tuple in gps_locations:
+        tlat = loc_tuple[0]
+        tlong = loc_tuple[1]
+
+        dist = math.sqrt(((tlat - lat) * (tlat - lat)) + ((tlong - long) * (tlong - long)))
+
+        if dist < threshold:
+            return loc_tuple[2]
+
+    return None
 
 
 def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
