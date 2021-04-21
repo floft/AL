@@ -127,6 +127,184 @@ def gps_find_location(gps_locations: List[List], lat: float, long: float) -> Opt
     return None
 
 
+# The following is_type() functions are used to determine if a certain reverse-geocoded location
+# fits into a certain core location type that we use. This is mostly used in `print_features()`.
+# In the future we may want to look at integrating this with the loc.translate options
+def is_house(loc_type, loc_class):
+    if loc_type == 'house' or loc_class == 'house' or \
+            loc_type == 'hamlet' or loc_class == 'hamlet' or \
+            loc_type == 'hotel' or loc_class == 'hotel' or \
+            loc_type == 'motel' or loc_class == 'motel' or \
+            loc_type == 'camp_site' or loc_type == 'neighborhood' or \
+            loc_type == 'neighbourhood' or loc_type == 'retirement_home' or \
+            loc_type == 'residential' or loc_class == 'residential' or \
+            loc_type == 'private_residence' or loc_type == 'suburb' or \
+            loc_type == 'nursing_home' or loc_type == 'neighbourhood':
+        return True
+    else:
+        return False
+
+
+def is_restaurant(loc_type, loc_class):
+    if loc_type == 'bar' or loc_class == 'bar' or \
+            loc_type == 'restaurant' or loc_class == 'restaurant' or \
+            loc_type == 'bakery' or loc_class == 'bakery' or \
+            loc_type == 'bbq' or loc_class == 'bbq' or \
+            loc_type == 'brewery' or loc_class == 'brewery' or \
+            loc_type == 'alcohol' or loc_class == 'alcohol' or \
+            loc_type == 'cafe' or loc_type == 'coffee' or \
+            loc_type == 'pub' or loc_class == 'pub' or \
+            loc_type == 'fast_food' or loc_class == 'fast_food' or \
+            loc_type == 'biergarten' or loc_type == 'confectionery' or \
+            loc_type == 'food' or loc_type == 'food_court' or \
+            loc_type == 'seafood' or loc_type == 'seafood' or \
+            loc_type == 'deli;convenience' or loc_type == 'nightclub':
+        return True
+    else:
+        return False
+
+
+def is_road(loc_type, loc_class):
+    if loc_type == 'highway' or loc_class == 'highway' or \
+            loc_type == 'motorway' or loc_class == 'motorway' or \
+            loc_type == 'motorway_junction' or loc_class == 'motorway_junction' or \
+            loc_type == 'motorway_link' or loc_class == 'motorway_link' or \
+            loc_type == 'parking' or loc_class == 'parking' or \
+            loc_type == 'parking_entrance' or loc_type == 'parking_space' or \
+            loc_type == 'bus_stop' or loc_class == 'bus_stop' or \
+            loc_type == 'ferry_terminal' or loc_type == 'motorcycle' or \
+            loc_type == 'cycleway' or loc_class == 'cycleway' or \
+            loc_type == 'footway' or loc_class == 'footway' or \
+            loc_type == 'fuel' or loc_class == 'fuel' or \
+            loc_type == 'trunk' or loc_class == 'trunk' or \
+            loc_type == 'road' or loc_class == 'road' or \
+            loc_type == 'pedestrian' or loc_type == 'rest_area' or \
+            loc_type == 'terminal' or loc_class == 'terminal' or \
+            loc_class == 'railway' or loc_type == 'water' or \
+            loc_type == 'hangar' or loc_type == 'taxi_way' or \
+            loc_type == 'track' or loc_type == 'primary' or \
+            loc_type == 'secondary' or loc_type == 'tertiary' or \
+            loc_type == 'bus_station' or loc_type == 'bridge':
+        return True
+    else:
+        return False
+
+
+def is_store(loc_type, loc_class):
+    if loc_type == 'bank' or loc_class == 'bank' or \
+            loc_type == 'bureau_de_change' or loc_class == 'bureau_de_change' or \
+            loc_type == 'gold_exchange' or loc_type == 'watches' or \
+            loc_type == 'bicycle_rental' or loc_class == 'bicycle_rental' or \
+            loc_type == 'bicycle_repair_station' or loc_class == 'bicycle_repair_station' or \
+            loc_type == 'boutique' or loc_class == 'boutique' or \
+            loc_type == 'art' or loc_class == 'art' or loc_type == 'gallery' or \
+            loc_type == 'art_class' or loc_class == 'art_class' or \
+            loc_type == 'auto_parts' or loc_class == 'auto_parts' or \
+            loc_type == 'beauty' or loc_class == 'beauty' or \
+            loc_type == 'beauty_supply' or loc_class == 'beauty_supply' or \
+            loc_type == 'books' or loc_class == 'books' or \
+            loc_type == 'furniture' or loc_class == 'car_wash' or \
+            loc_type == 'shop' or loc_class == 'shop' or \
+            loc_type == 'supermarket' or loc_class == 'supermarket' or \
+            loc_type == 'greengrocer' or loc_type == 'ice_cream' or \
+            loc_type == 'marketplace' or loc_type == 'video' or \
+            loc_type == 'clothes' or loc_class == 'clothes' or \
+            loc_type == 'insurance' or loc_class == 'insurance' or \
+            loc_type == 'interior_decoration' or \
+            loc_type == 'marketplace' or loc_class == 'marketplace' or \
+            loc_type == 'atm' or loc_type == 'insurance' or \
+            loc_type == 'pharmacy' or loc_type == 'nutrition_supplements' or \
+            loc_type == 'department_store' or loc_type == 'store' or \
+            loc_type == 'electronics' or loc_type == 'garden_centre' or \
+            loc_type == 'jewelry' or loc_type == 'retail' or loc_type == 'mall' or \
+            loc_type == 'toys' or loc_type == 'tuxedo' or loc_type == 'soap' or \
+            loc_type == 'marketplace' or loc_type == 'variety_store' or \
+            loc_type == 'doityouself':
+        return True
+    else:
+        return False
+
+
+def is_work(loc_type, loc_class):
+    if loc_type == 'office' or loc_class == 'office' or \
+            loc_type == 'school' or loc_class == 'school' or \
+            loc_type == 'yes' or loc_class == 'yes' or \
+            loc_type == 'accountant' or loc_class == 'accountant' or \
+            loc_type == 'administrative' or loc_class == 'administrative' or \
+            loc_type == 'government' or loc_type == 'lawyer' or \
+            loc_type == 'public_building' or loc_class == 'building' or \
+            loc_type == 'company' or loc_class == 'public_building' or \
+            loc_type == 'kindergarten' or loc_type == 'university' or \
+            loc_type == 'conference_center' or loc_type == 'college':
+        return True
+    else:
+        return False
+
+
+def is_attraction(loc_type, loc_class):
+    if loc_type == 'golf_course' or loc_class == 'golf_course' or \
+            loc_type == 'aerodrome' or loc_class == 'aerodrome' or \
+            loc_type == 'attraction' or loc_class == 'attraction' or \
+            loc_type == 'beach' or loc_class == 'beach' or \
+            loc_type == 'garden' or loc_class == 'leisure' or \
+            loc_type == 'tourism' or loc_class == 'tourism' or \
+            loc_type == 'museum' or loc_class == 'museum' or \
+            loc_type == 'theatre' or loc_class == 'theatre' or \
+            loc_type == 'swimming_area' or loc_type == 'swimming_pool' or \
+            loc_type == 'casino' or loc_type == 'cinema' or \
+            loc_type == 'park' or loc_class == 'park' or \
+            loc_type == 'lifeguard_tower' or loc_type == 'nature_reserve' or \
+            loc_type == 'picnic_site' or loc_type == 'playground' or \
+            loc_type == 'boat' or loc_class == 'boat' or \
+            loc_type == 'river' or loc_class == 'river' or \
+            loc_type == 'social_facility' or loc_class == 'social_facility' or \
+            loc_type == 'sports_centre' or loc_type == 'stadium' or \
+            loc_type == 'bench' or loc_class == 'bench':
+        return True
+    else:
+        return False
+
+
+def is_service(loc_type, loc_class):
+    if loc_type == 'place_of_worship' or loc_class == 'place_of_worship' or \
+            loc_type == 'fire_station' or loc_class == 'fire_station' or \
+            loc_type == 'ranger_station' or loc_class == 'ranger_station' or \
+            loc_type == 'fitness_centre' or loc_type == 'florist' or \
+            loc_type == 'atm' or loc_class == 'atm' or \
+            loc_type == 'townhall' or loc_class == 'townhall' or \
+            loc_type == 'aeroway' or loc_class == 'aeroway' or \
+            loc_type == 'car_wash' or loc_type == 'service' or loc_class == 'service' or \
+            loc_type == 'hospital' or loc_class == 'hospital' or \
+            loc_type == 'caravan_site' or loc_type == 'caterer' or \
+            loc_type == 'clinic' or \
+            loc_type == 'community_centre' or loc_type == 'artwork' or \
+            loc_type == 'dentist' or loc_type == 'amenity' or \
+            loc_class == 'historic' or loc_type == 'toilets' or \
+            loc_type == 'post_box' or loc_class == 'emergency' or \
+            loc_type == 'emissions_testing' or loc_type == 'library' or \
+            loc_type == 'doctor' or loc_type == 'doctors' or loc_type == 'clinic' or \
+            loc_type == 'dry_cleaning' or loc_type == 'optician' or \
+            loc_type == 'doctors' or loc_type == 'shelter' or \
+            loc_type == 'post_office' or loc_type == 'post_box' or \
+            loc_class == 'landuse' or loc_type == 'car_rental' or \
+            loc_type == 'car_repair' or loc_type == 'charging_station' or \
+            loc_class == 'natural' or loc_type == 'books' or \
+            loc_type == 'police' or loc_type == 'vending_machine' or \
+            loc_type == 'veterinary' or loc_type == 'charging_station' or \
+            loc_type == 'childcare' or loc_type == 'gym' or \
+            loc_type == 'auto_repair' or \
+            loc_type == 'tanning' or loc_type == 'car_sales' or \
+            loc_type == 'car_sales' or loc_type == 'townhall' or \
+            loc_type == 'compressed_air' or loc_type == 'chiropractor' or \
+            loc_type == 'recycling' or loc_type == 'tutoring' or \
+            loc_type == 'employment_agency' or loc_type == 'estate_agent' or \
+            loc_type == 'realtor' or loc_class == 'realtor' or \
+            loc_type == 'hunting_stand':
+        return True
+    else:
+        return False
+
+
 def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
     """
     Reverse-geocode the lat/long pairs in the input file using Nominatim, and write the geocoded
