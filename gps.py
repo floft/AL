@@ -128,7 +128,7 @@ def gps_find_location(gps_locations: List[List], lat: float, long: float) -> Opt
 
 
 # The following is_type() functions are used to determine if a certain reverse-geocoded location
-# fits into a certain core location type that we use. This is mostly used in `print_features()`.
+# fits into a certain core location type that we use. This is mostly used in `add_loc_to_list()`.
 # In the future we may want to look at integrating this with the loc.translate options
 def is_house(loc_type, loc_class):
     if loc_type == 'house' or loc_class == 'house' or \
@@ -305,8 +305,8 @@ def is_service(loc_type, loc_class):
         return False
 
 
-def print_features(locations: List[List], latitude: float, longitude: float, gps_type: str,
-                   gps_class_name: str):
+def add_loc_to_list(locations: List[List], latitude: float, longitude: float, gps_type: str,
+                    gps_class_name: str):
     """
     Create a location tuple for the given lat/long and geocoded type and class name. This includes
     using the given type and class name to determine the "converted type" of the location using
@@ -400,12 +400,12 @@ def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
                         print('description', description)
 
                         if address == 'None' or description == 'None' or description is None:
-                            print_features(location[0], location[1], 'other', 'other')
+                            add_loc_to_list(location[0], location[1], 'other', 'other')
                         else:
                             raw = description.raw
 
                             if print_loc_features:
-                                print_features(location[0], location[1], raw['type'], raw['class'])
+                                add_loc_to_list(location[0], location[1], raw['type'], raw['class'])
                             else:
                                 print(raw['type'], ' ', raw['class'])
                     except:
