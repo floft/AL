@@ -20,6 +20,49 @@ from geopy.geocoders import Nominatim
 
 geolocator = Nominatim(user_agent="AL")  # open street map server
 
+# Mapping of the type or classname we want to use when mapping the values in the reverse-geocoded
+# types when run in script mode
+# Each key is the type to map to, while the list of values on that key are the values to map to it)
+# TODO: Incorporate these into loc.translate and use that instead?
+location_type_mappings = {
+    'home': ['house', 'hamlet', 'hotel', 'motel', 'camp_site', 'neighborhood', 'neighbourhood', 
+             'retirement_home', 'residential', 'private_residence', 'suburb', 'nursing_home'],
+    'restaurant': ['bar', 'restaurant', 'bakery', 'bbq', 'brewery', 'alcohol', 'cafe', 'coffee', 
+                   'pub', 'fast_food', 'biergarten', 'confectionery', 'food', 'food_court', 
+                   'seafood', 'deli;convenience', 'nightclub'],
+    'road': ['highway', 'motorway', 'motorway_junction', 'motorway_link', 'parking', 
+             'parking_entrance', 'parking_space', 'bus_stop', 'ferry_terminal', 'motorcycle', 
+             'cycleway', 'footway', 'fuel', 'trunk', 'road', 'pedestrian', 'rest_area', 'terminal', 
+             'railway', 'water', 'hangar', 'taxi_way', 'track', 'primary', 'secondary', 'tertiary',
+             'bus_station', 'bridge'],
+    'store': ['bank', 'bureau_de_change', 'gold_exchange', 'watches', 'bicycle_rental',
+              'bicycle_repair_station', 'boutique', 'art', 'gallery', 'art_class', 'auto_parts',
+              'beauty', 'beauty_supply', 'books', 'furniture', 'car_wash', 'shop', 'supermarket',
+              'greengrocer', 'ice_cream', 'marketplace', 'video', 'clothes', 'insurance',
+              'interior_decoration', 'marketplace', 'atm', 'insurance', 'pharmacy',
+              'nutrition_supplements', 'department_store', 'store', 'electronics', 'garden_centre',
+              'jewelry', 'retail', 'mall', 'toys', 'tuxedo', 'soap',  'marketplace',
+              'variety_store', 'doityouself'],
+    'work': ['office', 'school', 'yes', 'accountant', 'administrative', 'government', 'lawyer', 
+             'public_building', 'building', 'company', 'kindergarten', 'university', 
+             'conference_center', 'college'],
+    'attraction': ['golf_course', 'aerodrome', 'attraction', 'beach', 'garden', 'leisure', 
+                   'tourism', 'museum', 'theatre', 'swimming_area', 'swimming_pool', 'casino', 
+                   'cinema', 'park', 'lifeguard_tower', 'nature_reserve', 'picnic_site', 
+                   'playground', 'boat', 'river', 'social_facility', 'sports_centre', 'stadium', 
+                   'bench'],
+    'service': ['place_of_worship', 'fire_station', 'ranger_station', 'fitness_centre', 'florist',
+                'atm', 'townhall', 'aeroway', 'car_wash', 'service', 'hospital', 'caravan_site',
+                'caterer', 'clinic', 'community_centre', 'artwork', 'dentist', 'amenity',
+                'historic', 'toilets', 'post_box', 'emergency', 'emissions_testing', 'library',
+                'doctor', 'doctors', 'clinic', 'dry_cleaning', 'optician', 'shelter', 'post_office',
+                'post_box', 'landuse', 'car_rental', 'car_repair', 'charging_station', 'natural',
+                'books', 'police', 'vending_machine', 'veterinary', 'charging_station', 'childcare',
+                'gym', 'auto_repair', 'tanning', 'car_sales', 'compressed_air', 'chiropractor',
+                'recycling', 'tutoring', 'employment_agency', 'estate_agent', 'realtor',
+                'hunting_stand']
+}
+
 
 def get_address(loc):
     """ Use the open street map to retrieve an address corresponding to a
