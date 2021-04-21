@@ -380,7 +380,6 @@ def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
     # Read the existing locations file:
     gps_locs = gps_read_locations(locations_file)
 
-    print_loc_features = True  # print high-level features
     count = 0
 
     with open(in_file, 'r') as input_file:
@@ -410,10 +409,7 @@ def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
                             # Add the location with its type and class values from the description:
                             raw = description.raw
 
-                            if print_loc_features:
-                                add_loc_to_list(gps_locs, lat, long, raw['type'], raw['class'])
-                            else:
-                                print(raw['type'], ' ', raw['class'])
+                            add_loc_to_list(gps_locs, lat, long, raw['type'], raw['class'])
                     except:
                         print('Error, geocode failed')
 
