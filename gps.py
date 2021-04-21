@@ -305,6 +305,60 @@ def is_service(loc_type, loc_class):
         return False
 
 
+def print_features(locations: List[List], latitude: float, longitude: float, gps_type: str,
+                   gps_class_name: str):
+    """
+    Create a location tuple for the given lat/long and geocoded type and class name. This includes
+    using the given type and class name to determine the "converted type" of the location using
+    our main location types.
+
+    The tuple is then printed and also added to the gps_locations list.
+
+    Parameters
+    ----------
+    locations : List[List]
+        A list of location tuples/lists (lat, long, type, ...)
+    latitude : float
+        The latitude of the location to add
+    longitude : float
+        The longitude of the location to add
+    gps_type : str
+        The reverse-geocode location "type"
+    gps_class_name : str
+        The reverse geocoded location "class"
+    """
+
+    loc_tuple = list()
+
+    loc_tuple.append(latitude)
+    loc_tuple.append(longitude)
+
+    # Check which type of location this one is given the provided geocoded type and class:
+    if is_house(gps_type, gps_class_name):
+      loc_tuple.append('home')
+    elif is_restaurant(gps_type, gps_class_name):
+      loc_tuple.append('restaurant')
+    elif is_road(gps_type, gps_class_name):
+      loc_tuple.append('road')
+    elif is_store(gps_type, gps_class_name):
+      loc_tuple.append('store')
+    elif is_work(gps_type, gps_class_name):
+      loc_tuple.append('work')
+    elif is_attraction(gps_type, gps_class_name):
+      loc_tuple.append('attraction')
+    elif is_service(gps_type, gps_class_name):
+      loc_tuple.append('service')
+    else:
+      loc_tuple.append('other')
+
+    loc_tuple.append(gps_type)
+    loc_tuple.append(gps_class_name)
+
+    print(loc_tuple)
+
+    locations.append(loc_tuple)
+
+
 def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
     """
     Reverse-geocode the lat/long pairs in the input file using Nominatim, and write the geocoded
