@@ -305,7 +305,7 @@ def is_service(loc_type, loc_class):
         return False
 
 
-def add_loc_to_list(locations: List[List], latitude: float, longitude: float, gps_type: str,
+def add_loc_to_list(gps_locations: List[List], latitude: float, longitude: float, gps_type: str,
                     gps_class_name: str):
     """
     Create a location tuple for the given lat/long and geocoded type and class name. This includes
@@ -316,7 +316,7 @@ def add_loc_to_list(locations: List[List], latitude: float, longitude: float, gp
 
     Parameters
     ----------
-    locations : List[List]
+    gps_locations : List[List]
         A list of location tuples/lists (lat, long, type, ...)
     latitude : float
         The latitude of the location to add
@@ -356,7 +356,7 @@ def add_loc_to_list(locations: List[List], latitude: float, longitude: float, gp
 
     print(loc_tuple)
 
-    locations.append(loc_tuple)
+    gps_locations.append(loc_tuple)
 
 
 def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
