@@ -388,24 +388,30 @@ def geocode_lat_longs(in_file: str, locations_file: str, start: int, end: int):
             if start <= count <= end:
                 location = str(str(line).strip()).split(' ', 2)
 
-                print('location ', location, 'count', count)
+                print(f'location {location} count {count}')
 
-                loc = gps_find_location(location[0], location[1])  # look in file
+                lat = float(location[0])
+                long = float(location[1])
 
-                if loc is None:
+                # Check if location exists already in our list:
+                existing_loc_type = gps_find_location(gps_locs, lat, long)
+
+                if existing_loc_type is None:
                     address = get_address(location)
 
                     try:
                         description = geolocator.geocode(address, timeout=None)
-                        print('description', description)
+                        print(f'description {description}')
 
                         if address == 'None' or description == 'None' or description is None:
-                            add_loc_to_list(location[0], location[1], 'other', 'other')
+                            # The location type is "other" if we couldn't geocode it:
+                            add_loc_to_list(gps_locs, lat, long, 'other', 'other')
                         else:
+                            # Add the location with its type and class values from the description:
                             raw = description.raw
 
                             if print_loc_features:
-                                add_loc_to_list(location[0], location[1], raw['type'], raw['class'])
+                                add_loc_to_list(gps_locs, lat, long, raw['type'], raw['class'])
                             else:
                                 print(raw['type'], ' ', raw['class'])
                     except:
