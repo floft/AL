@@ -431,16 +431,16 @@ if __name__ == '__main__':
 
     parser = ArgumentParser(description="Reverse-geocode locations in a lat/long file")
 
-    parser.add_argument('in_file', type=str, default='latlong',
+    parser.add_argument('in_file', type=str, nargs='?', default='latlong',
                         help="Input file (default %(default)s)")
-    parser.add_argument('start', type=int, default=0,
+    parser.add_argument('start', type=int, nargs='?', default=0,
                         help="Start position in the file (default %(default)s)")
-    parser.add_argument('locations_file', type=str, default='locations',
+    parser.add_argument('locations_file', type=str, nargs='?', default='locations',
                         help="Output file to write geocoded locations to (default %(default)s)")
-    parser.add_argument('end', type=int, default=27500000,
+    parser.add_argument('end', type=int, nargs='?', default=27500000,
                         help="End position in the file (default %(default)s)")
 
     args = parser.parse_args()
 
     # Geocode the lat/long entries in the input file and write to location file:
-    geocode_lat_longs(args.in_file, args.location_file, args.start, args.end)
+    geocode_lat_longs(args.in_file, args.locations_file, args.start, args.end)
