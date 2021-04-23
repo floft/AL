@@ -247,10 +247,4 @@ if __name__ == "__main__":
     conf = config.Config(description='')
     conf.set_parameters()
 
-    for infile in conf.files:
-        full_infile = os.path.join(conf.datapath, infile + conf.extension)
-        if not os.path.isfile(full_infile):
-            print(full_infile, "does not exist")
-        else:
-            main(base_filename=infile,
-                 cf=conf)
+    generate_multiple_person_stats(conf.files, conf)
