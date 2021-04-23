@@ -36,7 +36,7 @@ class PersonReadLocationsTest(TestCase):
                                   -1.3, 748.360107421875, 748.360107421875, 748.360107421875,
                                   748.360107421875, 748.360107421875, 748.360107421875]
         expected_hour_list = [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
-                              15, 15, 18, 18, 18, 18, 18, 18, 18, 12]
+                              15, 15, 18, 18, 18, 18, 18, 18, 12]
 
         # Act:
         actual_latitude_list, actual_longitude_list, actual_altitude_list, actual_hour_list \
