@@ -16,8 +16,9 @@ import numpy as np
 
 import config
 import kmeans
-import utils
 import warnings
+
+from mobiledata import MobileData
 
 
 def calculate_distance(spanlat, spanlong, lat1, long1, lat2, long2):
@@ -81,27 +82,31 @@ def calculate_person_features(feat_infile, al, person_stats, oc_clusters):
 def read_locations(base_filename: str, cf: config.Config):
     """ Read and store valid locations from input sensor file.
     """
+
     latitude = list()
     longitude = list()
     altitude = list()
     hour = list()
-    parse = False
+
     loc_infile = os.path.join(cf.datapath, base_filename + cf.extension)
-    with open(loc_infile, "r") as file:
-        for line in file:
-            x = str(str(line).strip()).split(' ', 5)  # read one sensor reading
-            if x[2] == "Latitude":  # add to list of visited locations
-                lvalue = float(x[4])
-                if -90.0 < lvalue < 90.0:
-                    parse = True
-                    latitude.append(float(x[4]))
-                    dt = utils.get_datetime(x[0], x[1])
-                    hour.append(int(dt.hour))
-            elif x[2] == "Longitude" and parse:
-                longitude.append(float(x[4]))
-            elif x[2] == "Altitude" and parse:
-                altitude.append(float(x[4]))
-                parse = False
+
+    # Read all events from the CSV file:
+    with MobileData(loc_infile, 'r') as in_data:
+        for event in in_data.rows_dict:
+            # Skip this event if lat/long/alt values are missing:
+            if event['latitude'] is None or event['longitude'] is None or event['altitude'] is None:
+                continue
+
+            # Skip if the latitude value is invalid (outside range):
+            if event['latitude'] <= -90.0 or event['latitude'] >= 90.0:
+                continue
+
+            # At this point, assume all values are valid for this event and add to lists:
+            latitude.append(event['latitude'])
+            longitude.append(event['longitude'])
+            altitude.append(event['altitude'])
+            hour.append(event[cf.stamp_field_name].hour)
+
     return latitude, longitude, altitude, hour
 
 
