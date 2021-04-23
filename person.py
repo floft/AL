@@ -16,7 +16,6 @@ import numpy as np
 
 import config
 import kmeans
-import utils
 import warnings
 
 from mobiledata import MobileData
