@@ -19,6 +19,8 @@ import kmeans
 import utils
 import warnings
 
+from mobiledata import MobileData
+
 
 def calculate_distance(spanlat, spanlong, lat1, long1, lat2, long2):
     """ Calculate distance from person's overall mean location.
@@ -87,30 +89,24 @@ def read_locations(base_filename: str, cf: config.Config):
     altitude = list()
     hour = list()
 
-    parse = False
-
     loc_infile = os.path.join(cf.datapath, base_filename + cf.extension)
 
-    with open(loc_infile, "r") as file:
-        for line in file:
-            x = str(str(line).strip()).split(' ', 5)  # read one sensor reading
+    # Read all events from the CSV file:
+    with MobileData(loc_infile, 'r') as in_data:
+        for event in in_data.rows_dict:
+            # Skip this event if lat/long/alt values are missing:
+            if event['latitude'] is None or event['longitude'] is None or event['altitude'] is None:
+                continue
 
-            if x[2] == "Latitude":  # add to list of visited locations
-                lvalue = float(x[4])
+            # Skip if the latitude value is invalid (outside range):
+            if event['latitude'] <= -90.0 or event['latitude'] >= 90.0:
+                continue
 
-                if -90.0 < lvalue < 90.0:
-                    parse = True
-                    latitude.append(float(x[4]))
-
-                    dt = utils.get_datetime(x[0], x[1])
-
-                    hour.append(int(dt.hour))
-            elif x[2] == "Longitude" and parse:
-                longitude.append(float(x[4]))
-            elif x[2] == "Altitude" and parse:
-                altitude.append(float(x[4]))
-                
-                parse = False
+            # At this point, assume all values are valid for this event and add to lists:
+            latitude.append(event['latitude'])
+            longitude.append(event['longitude'])
+            altitude.append(event['altitude'])
+            hour.append(event[cf.stamp_field_name].hour)
 
     return latitude, longitude, altitude, hour
 
