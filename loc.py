@@ -14,6 +14,8 @@
 
 import math
 import os.path
+import random
+import time
 from datetime import datetime
 from multiprocessing import Queue, Process
 from typing import Optional, Dict, Union, List
@@ -507,7 +509,23 @@ def parallel_extract_features(response_queue: Queue, base_filename: str, loc_obj
 
     print('extracted', base_filename)
 
-    response_queue.put((loc_obj.xdata, loc_obj.ydata, base_filename))
+    # Break the responses into segments with a maximum of this size.
+    seg_size = 1000
+
+    # Loop through the response.
+    for i in range((len(loc_obj.xdata) + seg_size - 1) // seg_size):
+        # Wait for the queue size to drop down some.
+        while response_queue.qsize() > 100:
+            time.sleep(random.random())
+
+        # Send the response segment.
+        response_queue.put((loc_obj.xdata[i * seg_size:(i + 1) * seg_size],
+                            loc_obj.ydata[i * seg_size:(i + 1) * seg_size],
+                            base_filename))
+
+    print('sent to queue', base_filename)
+    # To signify the completion of this thread, we return the array sizes instead of lists.
+    response_queue.put((len(loc_obj.xdata), len(loc_obj.ydata), base_filename))
 
     return
 
@@ -552,9 +570,17 @@ def collect_features(files: List[str], loc_obj: Location) -> Location:
 
     # Now get the results of the processes from the queue:
     for i in range(len(feature_processes)):
-        tmp_xdata, tmp_ydata, datafile = feature_responses.get()
-        loc_obj.xdata.extend(tmp_xdata)
-        loc_obj.ydata.extend(tmp_ydata)
+        # Start processing and loading data until we reach the end of a thread message.
+        finished_a_thread = False
+        while not finished_a_thread:
+            tmp_xdata, tmp_ydata, datafile = feature_responses.get()
+            # If tmp_xdata is a list, add it to the main object xdata, otherwise we have reached
+            # the end of a thread and can finish this iteration of the loop.
+            if isinstance(tmp_xdata, list):
+                loc_obj.xdata.extend(tmp_xdata)
+                loc_obj.ydata.extend(tmp_ydata)
+            else:
+                finished_a_thread = True
 
         print('{} of {} done: {}'.format(i + 1, len(feature_processes), datafile))
 
