@@ -67,7 +67,7 @@ class CalculatePersonFeaturesTest(TestCase):
         mock_kmeans_predict.side_effect = self.sorted_kmeans_predict_values
 
         expected_output = [
-            0.07186009116853918,  # distance value
+            0.0775795247945229,  # distance value
 
             -0.9044338400425644,  # difference from meanlat
             0.23386730372315867,  # difference from meanlong
