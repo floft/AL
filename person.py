@@ -10,6 +10,8 @@
 
 import os
 from collections import Counter
+from multiprocessing import Process
+from typing import List
 
 import joblib
 import numpy as np
@@ -181,6 +183,64 @@ def main(base_filename, cf: config.Config):
     personfile = os.path.join(cf.datapath, base_filename + '.person')
     np.savetxt(personfile, stats, delimiter=',')
     return
+
+
+def parallel_generate_person_stats(base_filename: str, cf: config.Config):
+    """
+    Generate person stats for the given file base filename and config. Intended to be used in
+    parallel processes.
+
+    Parameters
+    ----------
+    base_filename : str
+        The base name for the file to parse person features for
+    cf : config.Config
+        The configuration for the processing
+    """
+
+    print(f'Creating person features for {base_filename}')
+
+    main(base_filename, cf)
+
+    print(f'Finished person features for {base_filename}')
+
+
+def generate_multiple_person_stats(files: List[str], cf: config.Config):
+    """
+    Generate person features for multiple files in parallel using multiprocessing.
+
+    Parameters
+    ----------
+    files : List[str]
+        The list of base filenames to parse features for
+    cf : config.Config
+        The config object for configuring parsing
+    """
+
+    # Verify that the files all exist:
+    for base_filename in files:
+        full_filename = os.path.join(conf.datapath, base_filename + conf.extension)
+
+        if not os.path.isfile(full_filename):
+            msg = f"{full_filename} does not exist"
+            raise ValueError(msg)
+
+    # Now run the multiprocessing:
+    # Create list of processes:
+    stat_gen_processes = list()
+
+    # Set up the stat generation process objects:
+    for base_filename in files:
+        stat_gen_processes.append(Process(target=parallel_generate_person_stats,
+                                          args=(base_filename, cf)))
+
+    # Start the processes:
+    for i in range(len(stat_gen_processes)):
+        stat_gen_processes[i].start()
+
+    # Join the processes back when done:
+    for i in range(len(stat_gen_processes)):
+        stat_gen_processes[i].join()
 
 
 if __name__ == "__main__":
