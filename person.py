@@ -29,7 +29,8 @@ def calculate_distance(spanlat, spanlong, lat1, long1, lat2, long2):
     else:
         d1 = (lat2 - lat1) * (lat2 - lat1)
         d2 = (long2 - long1) * (long2 - long1)
-        return np.sqrt(d1 + d2) / (spanlat + spanlong)
+        span = np.sqrt(spanlat * spanlat + spanlong * spanlong)
+        return np.sqrt(d1 + d2) / span
 
 
 def close_loc(lat1, long1, alt1, lat2, long2, alt2):
