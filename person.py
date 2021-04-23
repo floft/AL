@@ -81,27 +81,37 @@ def calculate_person_features(feat_infile, al, person_stats, oc_clusters):
 def read_locations(base_filename: str, cf: config.Config):
     """ Read and store valid locations from input sensor file.
     """
+
     latitude = list()
     longitude = list()
     altitude = list()
     hour = list()
+
     parse = False
+
     loc_infile = os.path.join(cf.datapath, base_filename + cf.extension)
+
     with open(loc_infile, "r") as file:
         for line in file:
             x = str(str(line).strip()).split(' ', 5)  # read one sensor reading
+
             if x[2] == "Latitude":  # add to list of visited locations
                 lvalue = float(x[4])
+
                 if -90.0 < lvalue < 90.0:
                     parse = True
                     latitude.append(float(x[4]))
+
                     dt = utils.get_datetime(x[0], x[1])
+
                     hour.append(int(dt.hour))
             elif x[2] == "Longitude" and parse:
                 longitude.append(float(x[4]))
             elif x[2] == "Altitude" and parse:
                 altitude.append(float(x[4]))
+                
                 parse = False
+
     return latitude, longitude, altitude, hour
 
 
