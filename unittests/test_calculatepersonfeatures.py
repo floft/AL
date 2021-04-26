@@ -27,7 +27,6 @@ class CalculatePersonFeaturesTest(TestCase):
     @patch.object(kmeans.KMeans, 'sorted_kmeans_predict')
     def test_calculatepersonfeatures_normaldata_1(self, mock_kmeans_predict):
         # arrange
-        test_infile = None
         test_al = MagicMock()
 
         test_conf = MagicMock()
@@ -81,7 +80,7 @@ class CalculatePersonFeaturesTest(TestCase):
         ]
 
         # act
-        output = calculate_person_features(test_infile, test_al, test_person_stats, test_clusters)
+        output = calculate_person_features(test_al, test_person_stats, test_clusters)
 
         # assert
         self.assertEqual(output, expected_output)

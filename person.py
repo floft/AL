@@ -55,7 +55,7 @@ def most_common(data):
     return c.most_common(1)[0][0]
 
 
-def calculate_person_features(feat_infile, al, person_stats, oc_clusters):
+def calculate_person_features(al, person_stats, oc_clusters):
     """ Calculate person-specific features to include in feature vector.
     """
     results = list()
