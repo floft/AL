@@ -428,10 +428,30 @@ def end_window(v2, count, conf: config.Config):
            ((conf.annotate > 0) and ((count % conf.samplesize) == fullsize))
 
 
-def extract_features(base_filename, al: AL) -> (list, list):
-    """ Extract a feature vector from the window of sensor data to use for
-    classifying the data sequence.
+def extract_features(base_filename: str, al: AL) -> (list, list):
     """
+    Extract feature vectors from the provided file using the given AL object, which should at the
+    least have its config and initialization set up already.
+
+    Will read in the file indicated by the base name, parsing each event and creating windows.
+    When a window is complete, extract features from it for an activity (AL) model, and add the
+    feature vector and ground-truth activity label to `xdata` and `ydata`, respectively.
+
+    Parameters
+    ----------
+    base_filename : str
+        The "base" filename for the file to read - will be prepended with the data path and have the
+        data file extension added to the end (from config)
+    al : AL
+        An `AL` object which has config and initialization done on it
+
+    Returns
+    -------
+    (list, list)
+        `xdata` and `ydata` containing feature vectors and ground-truth activity labels,
+        respectively, for extracted windows.
+    """
+    
     xdata = list()
     ydata = list()
     personfile = os.path.join(al.conf.datapath, base_filename + '.person')
