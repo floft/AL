@@ -230,7 +230,7 @@ class AL:
             # Collect one set of sensor readings
             if (count % self.conf.numsensors) == 0 and count >= self.conf.windowsize:
                 dt = self.read_sensors_from_window(lines)
-                xpoint = features.create_point(self, dt, infile, person_stats, al_clusters)
+                xpoint = features.create_point(self, dt, person_stats, al_clusters)
                 xdata = [xpoint]
                 newlabel = clf.predict(xdata)[0]
                 if self.conf.annotate == 1:
@@ -548,7 +548,7 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
             gen = 1
 
             if al.location.valid_location_data(al.latitude, al.longitude, al.altitude):
-                xpoint = features.create_point(al, dt, base_filename, person_stats, al_clusters)
+                xpoint = features.create_point(al, dt, person_stats, al_clusters)
 
                 xdata.append(xpoint)
                 ydata.append(label)
