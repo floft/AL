@@ -65,7 +65,6 @@ class CreatePointTest(TestCase):
 
         test_stamp = datetime(2021, 1, 7, 12, 0, 0)
 
-        test_filename = Mock(spec=str)
         test_person_stats = Mock(spec=np.ndarray)
         test_clusters = [
             np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
@@ -119,7 +118,7 @@ class CreatePointTest(TestCase):
         ]
 
         # act
-        output = create_point(test_al, test_stamp, test_filename, test_person_stats, test_clusters)
+        output = create_point(test_al, test_stamp, test_person_stats, test_clusters)
 
         # assert
         self.assertEqual(output, expected_output)
@@ -172,7 +171,6 @@ class CreatePointTest(TestCase):
 
         test_stamp = datetime(2021, 1, 7, 12, 0, 0)
 
-        test_filename = Mock(spec=str)
         test_person_stats = Mock(spec=np.ndarray)
         test_clusters = [
             np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
@@ -226,7 +224,7 @@ class CreatePointTest(TestCase):
         ]
 
         # act
-        output = create_point(test_al, test_stamp, test_filename, test_person_stats, test_clusters)
+        output = create_point(test_al, test_stamp, test_person_stats, test_clusters)
 
         # assert
         self.assertEqual(output, expected_output)
@@ -283,7 +281,6 @@ class CreatePointTest(TestCase):
 
         test_stamp = datetime(2021, 1, 7, 12, 0, 0)
 
-        test_filename = Mock(spec=str)
         test_person_stats = np.array([-1.0, 46.5, -116.0, -1.0, 1.0, 12.0])
         test_clusters = [
             np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
@@ -358,7 +355,7 @@ class CreatePointTest(TestCase):
         ]
 
         # act
-        output = create_point(test_al, test_stamp, test_filename, test_person_stats, test_clusters)
+        output = create_point(test_al, test_stamp, test_person_stats, test_clusters)
 
         # assert
         self.assertEqual(output, expected_output)
@@ -424,7 +421,6 @@ class CreatePointTest(TestCase):
 
         test_stamp = datetime(2021, 1, 7, 12, 0, 0)
 
-        test_filename = Mock(spec=str)
         test_person_stats = np.array([-1.0, 46.5, -116.0, -1.0, 1.0, 12.0])
         test_clusters = [
             np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
@@ -506,7 +502,7 @@ class CreatePointTest(TestCase):
         ]
 
         # act
-        output = create_point(test_al, test_stamp, test_filename, test_person_stats, test_clusters)
+        output = create_point(test_al, test_stamp, test_person_stats, test_clusters)
 
         # assert
         test_loc.generate_gps_features.assert_called_once_with(*expected_generate_gps_features_args)
@@ -564,7 +560,6 @@ class CreatePointTest(TestCase):
 
         test_stamp = datetime(2021, 1, 7, 12, 0, 0)
 
-        test_filename = Mock(spec=str)
         test_person_stats = Mock(spec=np.ndarray)
         test_clusters = [
             np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
@@ -618,7 +613,7 @@ class CreatePointTest(TestCase):
         ]
 
         # act
-        output = create_point(test_al, test_stamp, test_filename, test_person_stats, test_clusters)
+        output = create_point(test_al, test_stamp, test_person_stats, test_clusters)
 
         # assert
         self.assertEqual(output, expected_output)
@@ -685,7 +680,6 @@ class CreatePointTest(TestCase):
 
         test_stamp = datetime(2021, 1, 7, 12, 0, 0)
 
-        test_filename = Mock(spec=str)
         test_person_stats = np.array([-1.0, 46.5, -116.0, -1.0, 1.0, 12.0])
         test_clusters = [
             np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]]),
@@ -767,7 +761,7 @@ class CreatePointTest(TestCase):
         ]
 
         # act
-        output = create_point(test_al, test_stamp, test_filename, test_person_stats, test_clusters)
+        output = create_point(test_al, test_stamp, test_person_stats, test_clusters)
 
         # assert
         test_loc.generate_gps_features.assert_called_once_with(*expected_generate_gps_features_args)
