@@ -27,12 +27,11 @@
 #
 # Copyright (c) 2020. Washington State University (WSU). All rights reserved.
 # Code and data may not be used or distributed without permission from WSU.
-
-
-import datetime
+import math
 import os.path
 from datetime import datetime
 from multiprocessing import Process, Queue
+from typing import Optional, Dict, Union
 
 import joblib
 import numpy as np
@@ -365,6 +364,61 @@ class AL:
         self.vacc.append(float(v1))
         return pdt, v2, date, time
 
+    def update_sensors(self, event: Dict[str, Union[datetime, float, str, None]]):
+        """
+        Update the sensor lists based on the input event.
+
+        Parameters
+        ----------
+        event : Dict[str, Union[datetime, float, str, None]]
+            An event dictionary with fields mapped to their respective values
+            Normally these would be output from the CSV Data Layer
+        """
+
+        # Set all None values for sensors to just be zeros
+        # This just creates a new dictionary setting the value for each field to 0.0 if it is None:
+        e = {f: v if v is not None else 0.0 for f, v in event.items()}
+
+        yaw_clean = utils.clean(e['yaw'], -5.0, 5.0)
+        self.yaw.append(yaw_clean)
+
+        pitch_clean = utils.clean(e['pitch'], -5.0, 5.0)
+        self.pitch.append(pitch_clean)
+
+        roll_clean = utils.clean(e['roll'], -5.0, 5.0)
+        self.roll.append(roll_clean)
+
+        self.rotx.append(e['rotation_rate_x'])
+        self.roty.append(e['rotation_rate_y'])
+        self.rotz.append(e['rotation_rate_z'])
+
+        acc_x_clean = utils.clean(e['user_acceleration_x'], -1.0, 1.0)
+        self.accx.append(acc_x_clean)
+        acc_total = acc_x_clean * acc_x_clean
+
+        acc_y_clean = utils.clean(e['user_acceleration_y'], -1.0, 1.0)
+        self.accy.append(acc_y_clean)
+        acc_total += acc_y_clean * acc_y_clean
+
+        acc_z_clean = utils.clean(e['user_acceleration_z'], -1.0, 1.0)
+        self.accz.append(acc_z_clean)
+        acc_total += acc_z_clean * acc_z_clean
+
+        self.acctotal.append(math.sqrt(acc_total))  # compute combined acceleration
+
+        self.latitude.append(e['latitude'])
+        self.update_location_range(e['latitude'], datatype="latitude")
+
+        self.longitude.append(e['longitude'])
+        self.update_location_range(e['longitude'], datatype="longitude")
+
+        self.altitude.append(e['altitude'])
+
+        self.course.append(e['course'])
+        self.speed.append(e['speed'])
+        self.hacc.append(e['horizontal_accuracy'])
+        self.vacc.append(e['vertical_accuracy'])
+
     def update_location_range(self, value, datatype):
         """ Maintain min and max latitude and longitude values to compute relative
         distances for each person.
@@ -412,6 +466,39 @@ class AL:
         except:
             return False, None, None, None, None, None, None
 
+    def process_activity_label(self, event: Dict[str, Union[datetime, float, str, None]]) \
+            -> Optional[str]:
+        """
+        Process the activity label from the given event. This involves replacing spaces with
+        underscores, and translating the activity name if `translate` is set to True in the config.
+
+        Parameters
+        ----------
+        event : Dict[str, Union[datetime, float, str, None]]
+            An event dictionary with fields mapped to their respective values
+            Normally these would be output from the CSV Data Layer
+
+        Returns
+        -------
+        Optional[str]
+            The cleaned and (possibly) translated event name, or None if the original was None
+        """
+
+        original_label = event[self.conf.label_field_name]
+
+        # Return None if the original label is None:
+        if original_label is None:
+            return None
+
+        # Replace spaces with underscores:
+        cleaned_label = original_label.replace(' ', '_')
+
+        # Translate the label if configured:
+        if self.conf.translate:
+            cleaned_label = self.aclass.map_activity_name(cleaned_label)
+
+        return cleaned_label
+
 
 def new_window(delta, gen, count, conf: config.Config):
     """ Determine if conditions are met to start a new window.
@@ -420,14 +507,34 @@ def new_window(delta, gen, count, conf: config.Config):
            ((conf.annotate > 0) and ((count % conf.samplesize) == 0))
 
 
-def end_window(v2, count, conf: config.Config):
-    """ Determine if conditions are met to end the window and add a labeled data
-    point to the sample.
+def end_window(label: str, count: int, conf: config.Config) -> bool:
     """
+    Check whether conditions are met to end the window and generate a feature vector.
+
+    Parameters
+    ----------
+    label : str
+        The processed (and translated, if needed) activity label for the current event
+    count : int
+        Number of events processed overall
+    conf : config.Config
+        The configuration to check things against
+
+    Returns
+    -------
+    bool
+        True if we should end the window and create a feature vector/data point
+    """
+
     fullsize = conf.samplesize - 1
-    return ((conf.annotate == 0) and (v2 != 'Ignore') and (v2 != 'None') and
-            ((count % conf.samplesize) == (conf.samplesize - 1))) or \
-           ((conf.annotate > 0) and ((count % conf.samplesize) == fullsize))
+
+    if conf.annotate == 0:
+        return label is not None and label != 'None' and label != 'Ignore' \
+               and count % conf.samplesize == conf.samplesize - 1
+    elif conf.annotate > 0:
+        return count % conf.samplesize == fullsize
+    else:
+        return False
 
 
 def extract_features(base_filename: str, al: AL) -> (list, list):
@@ -473,19 +580,21 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
     in_data = MobileData(datafile, 'r')
     in_data.open()
 
-    infile = open(datafile, "r")  # process input file to create feature vector
-
     count = 0
 
-    valid, e_date, e_time, f1, f2, v1, v2 = al.read_entry(infile)
-
-    prevdt = utils.get_datetime(e_date, e_time)
+    prevdt = None  # type: Optional[datetime]
 
     al.resetvars()
     gen = 0
 
-    while valid:
-        dt = utils.get_datetime(e_date, e_time)
+    # Loop over all event rows in the input files:
+    for event in in_data.rows_dict:
+        # Get the event's stamp:
+        dt = event[al.conf.stamp_field_name]
+
+        # Set prevdt to this time if None (first event):
+        if prevdt is None:
+            prevdt = dt
 
         delta = dt - prevdt
 
@@ -493,14 +602,20 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
             al.resetvars()
             gen = 0
 
-        pdt, v2, e_date, e_time = al.read_sensors(infile, v1)
+        # Update the sensor values for this window:
+        al.update_sensors(event)
 
-        if end_window(v2, count, al.conf):
+        # Get the processed label for this event:
+        label = al.process_activity_label(event)
+
+        if end_window(label, count, al.conf):
             gen = 1
 
             if al.location.valid_location_data(al.latitude, al.longitude, al.altitude):
                 dt = utils.get_datetime(e_date, e_time)
+
                 xpoint = features.create_point(al, dt, base_filename, person_stats, al_clusters)
+
                 xdata.append(xpoint)
                 ydata.append(v2)
 
@@ -510,7 +625,7 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
             prevdt = utils.get_datetime(e_date, e_time)
 
         count += 1
-        
+
         valid, e_date, e_time, f1, f2, v1, v2 = al.read_entry(infile)
 
     in_data.close()
