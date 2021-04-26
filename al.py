@@ -451,16 +451,21 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
         `xdata` and `ydata` containing feature vectors and ground-truth activity labels,
         respectively, for extracted windows.
     """
-    
+
     xdata = list()
     ydata = list()
+
+    # Load person stats and clusters:
+    # If the .person file for this data does not exist, create it first
     personfile = os.path.join(al.conf.datapath, base_filename + '.person')
     if not os.path.isfile(personfile):
-        print(personfile, "does not exist, generating these stats")
+        print(f"{personfile} does not exist, generating these stats")
         person.main(base_filename, al.conf)
+
     person_stats = np.loadtxt(personfile, delimiter=',')  # person statistics
-    datafile = os.path.join(al.conf.datapath, base_filename + al.conf.extension)
     al_clusters = features.load_clusters(base_filename, al.conf)
+
+    datafile = os.path.join(al.conf.datapath, base_filename + al.conf.extension)
 
     infile = open(datafile, "r")  # process input file to create feature vector
     count = 0
