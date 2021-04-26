@@ -612,21 +612,14 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
             gen = 1
 
             if al.location.valid_location_data(al.latitude, al.longitude, al.altitude):
-                dt = utils.get_datetime(e_date, e_time)
-
                 xpoint = features.create_point(al, dt, base_filename, person_stats, al_clusters)
 
                 xdata.append(xpoint)
-                ydata.append(v2)
+                ydata.append(label)
 
-        if not valid:
-            prevdt = pdt
-        else:
-            prevdt = utils.get_datetime(e_date, e_time)
+        prevdt = dt
 
         count += 1
-
-        valid, e_date, e_time, f1, f2, v1, v2 = al.read_entry(infile)
 
     in_data.close()
 
