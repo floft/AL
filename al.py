@@ -51,6 +51,8 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
+from mobiledata import MobileData
+
 
 def warn(*args, **kwargs):
     pass
@@ -465,35 +467,54 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
     person_stats = np.loadtxt(personfile, delimiter=',')  # person statistics
     al_clusters = features.load_clusters(base_filename, al.conf)
 
+    # Load the data file through the CSV data layer:
     datafile = os.path.join(al.conf.datapath, base_filename + al.conf.extension)
 
+    in_data = MobileData(datafile, 'r')
+    in_data.open()
+
     infile = open(datafile, "r")  # process input file to create feature vector
+
     count = 0
+
     valid, e_date, e_time, f1, f2, v1, v2 = al.read_entry(infile)
+
     prevdt = utils.get_datetime(e_date, e_time)
+
     al.resetvars()
     gen = 0
+
     while valid:
         dt = utils.get_datetime(e_date, e_time)
+
         delta = dt - prevdt
+
         if new_window(delta, gen, count, al.conf):  # start new window
             al.resetvars()
             gen = 0
+
         pdt, v2, e_date, e_time = al.read_sensors(infile, v1)
+
         if end_window(v2, count, al.conf):
             gen = 1
+
             if al.location.valid_location_data(al.latitude, al.longitude, al.altitude):
                 dt = utils.get_datetime(e_date, e_time)
                 xpoint = features.create_point(al, dt, base_filename, person_stats, al_clusters)
                 xdata.append(xpoint)
                 ydata.append(v2)
+
         if not valid:
             prevdt = pdt
         else:
             prevdt = utils.get_datetime(e_date, e_time)
+
         count += 1
+        
         valid, e_date, e_time, f1, f2, v1, v2 = al.read_entry(infile)
-    infile.close()
+
+    in_data.close()
+
     return xdata, ydata
 
 
