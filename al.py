@@ -507,13 +507,13 @@ def new_window(delta, gen, count, conf: config.Config):
            ((conf.annotate > 0) and ((count % conf.samplesize) == 0))
 
 
-def end_window(label: str, count: int, conf: config.Config) -> bool:
+def end_window(label: Optional[str], count: int, conf: config.Config) -> bool:
     """
     Check whether conditions are met to end the window and generate a feature vector.
 
     Parameters
     ----------
-    label : str
+    label : Optional[str]
         The processed (and translated, if needed) activity label for the current event
     count : int
         Number of events processed overall
