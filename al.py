@@ -317,53 +317,6 @@ class AL:
             dt = utils.get_datetime(line[0], line[1])
         return dt
 
-    def read_sensors(self, infile, v1):
-        """ Read and store one set of sensor readings.
-        """
-        self.yaw.append(utils.clean(float(v1), -5.0, 5.0))  # first line already read
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.pitch.append(utils.clean(float(v1), -5.0, 5.0))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.roll.append(utils.clean(float(v1), -5.0, 5.0))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.rotx.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.roty.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.rotz.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accx.append(v1)
-        temp = v1 * v1
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accy.append(v1)
-        temp += v1 * v1
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accz.append(v1)
-        temp += v1 * v1
-        self.acctotal.append(np.sqrt(temp))  # compute combined acceleration
-
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.latitude.append(float(v1))
-        self.update_location_range(float(v1), datatype="latitude")
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.longitude.append(float(v1))
-        self.update_location_range(float(v1), datatype="longitude")
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.altitude.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.course.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.speed.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.hacc.append(float(v1))
-        pdt = utils.get_datetime(date, time)
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.vacc.append(float(v1))
-        return pdt, v2, date, time
-
     def update_sensors(self, event: Dict[str, Union[datetime, float, str, None]]):
         """
         Update the sensor lists based on the input event.
@@ -448,23 +401,6 @@ class AL:
             self.maxlong = maxrange
 
         return
-
-    def read_entry(self, infile):
-        """ Parse a single line from a text file containing a sensor reading.
-        The format is "date time sensorname sensorname value <activitylabel|0>".
-        """
-        try:
-            line = infile.readline()
-            x = str(str(line).strip()).split(' ', 5)
-            if len(x) < 6:
-                return True, x[0], x[1], x[2], x[3], x[4], 'None'
-            else:
-                x[5] = x[5].replace(' ', '_')
-                if self.conf.translate:
-                    x[5] = self.aclass.map_activity_name(x[5])
-                return True, x[0], x[1], x[2], x[3], x[4], x[5]
-        except:
-            return False, None, None, None, None, None, None
 
     def process_activity_label(self, event: Dict[str, Union[datetime, float, str, None]]) \
             -> Optional[str]:
