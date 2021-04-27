@@ -537,6 +537,7 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
         if new_window(delta, gen, count, al.conf):  # start new window
             al.resetvars()
             gen = 0
+            count = 0
 
         # Update the sensor values for this window:
         al.update_sensors(event)
