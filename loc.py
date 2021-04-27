@@ -319,6 +319,7 @@ class Location:
 
             if self.new_window(delta, gen, count):  # start new window
                 gen = self.resetvars()
+                count = 0
 
             # Update the sensor values for this window:
             self.update_sensors(event)
@@ -365,9 +366,6 @@ class Location:
             prevdt = dt
 
             count += 1
-
-            if (count % 100000) == 0:
-                print('count', count)
 
         in_data.close()
 
