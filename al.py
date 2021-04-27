@@ -27,12 +27,11 @@
 #
 # Copyright (c) 2020. Washington State University (WSU). All rights reserved.
 # Code and data may not be used or distributed without permission from WSU.
-
-
-import datetime
+import math
 import os.path
 from datetime import datetime
 from multiprocessing import Process, Queue
+from typing import Optional, Dict, Union
 
 import joblib
 import numpy as np
@@ -50,6 +49,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
+
+from mobiledata import MobileData
 
 
 def warn(*args, **kwargs):
@@ -229,7 +230,7 @@ class AL:
             # Collect one set of sensor readings
             if (count % self.conf.numsensors) == 0 and count >= self.conf.windowsize:
                 dt = self.read_sensors_from_window(lines)
-                xpoint = features.create_point(self, dt, infile, person_stats, al_clusters)
+                xpoint = features.create_point(self, dt, person_stats, al_clusters)
                 xdata = [xpoint]
                 newlabel = clf.predict(xdata)[0]
                 if self.conf.annotate == 1:
@@ -316,52 +317,60 @@ class AL:
             dt = utils.get_datetime(line[0], line[1])
         return dt
 
-    def read_sensors(self, infile, v1):
-        """ Read and store one set of sensor readings.
+    def update_sensors(self, event: Dict[str, Union[datetime, float, str, None]]):
         """
-        self.yaw.append(utils.clean(float(v1), -5.0, 5.0))  # first line already read
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.pitch.append(utils.clean(float(v1), -5.0, 5.0))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.roll.append(utils.clean(float(v1), -5.0, 5.0))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.rotx.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.roty.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.rotz.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accx.append(v1)
-        temp = v1 * v1
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accy.append(v1)
-        temp += v1 * v1
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        v1 = utils.clean(float(v1), -1.0, 1.0)
-        self.accz.append(v1)
-        temp += v1 * v1
-        self.acctotal.append(np.sqrt(temp))  # compute combined acceleration
+        Update the sensor lists based on the input event.
 
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.latitude.append(float(v1))
-        self.update_location_range(float(v1), datatype="latitude")
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.longitude.append(float(v1))
-        self.update_location_range(float(v1), datatype="longitude")
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.altitude.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.course.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.speed.append(float(v1))
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.hacc.append(float(v1))
-        pdt = utils.get_datetime(date, time)
-        valid, date, time, f1, f2, v1, v2 = self.read_entry(infile)
-        self.vacc.append(float(v1))
-        return pdt, v2, date, time
+        Parameters
+        ----------
+        event : Dict[str, Union[datetime, float, str, None]]
+            An event dictionary with fields mapped to their respective values
+            Normally these would be output from the CSV Data Layer
+        """
+
+        # Set all None values for sensors to just be zeros
+        # This just creates a new dictionary setting the value for each field to 0.0 if it is None:
+        e = {f: v if v is not None else 0.0 for f, v in event.items()}
+
+        yaw_clean = utils.clean(e['yaw'], -5.0, 5.0)
+        self.yaw.append(yaw_clean)
+
+        pitch_clean = utils.clean(e['pitch'], -5.0, 5.0)
+        self.pitch.append(pitch_clean)
+
+        roll_clean = utils.clean(e['roll'], -5.0, 5.0)
+        self.roll.append(roll_clean)
+
+        self.rotx.append(e['rotation_rate_x'])
+        self.roty.append(e['rotation_rate_y'])
+        self.rotz.append(e['rotation_rate_z'])
+
+        acc_x_clean = utils.clean(e['user_acceleration_x'], -1.0, 1.0)
+        self.accx.append(acc_x_clean)
+        acc_total = acc_x_clean * acc_x_clean
+
+        acc_y_clean = utils.clean(e['user_acceleration_y'], -1.0, 1.0)
+        self.accy.append(acc_y_clean)
+        acc_total += acc_y_clean * acc_y_clean
+
+        acc_z_clean = utils.clean(e['user_acceleration_z'], -1.0, 1.0)
+        self.accz.append(acc_z_clean)
+        acc_total += acc_z_clean * acc_z_clean
+
+        self.acctotal.append(math.sqrt(acc_total))  # compute combined acceleration
+
+        self.latitude.append(e['latitude'])
+        self.update_location_range(e['latitude'], datatype="latitude")
+
+        self.longitude.append(e['longitude'])
+        self.update_location_range(e['longitude'], datatype="longitude")
+
+        self.altitude.append(e['altitude'])
+
+        self.course.append(e['course'])
+        self.speed.append(e['speed'])
+        self.hacc.append(e['horizontal_accuracy'])
+        self.vacc.append(e['vertical_accuracy'])
 
     def update_location_range(self, value, datatype):
         """ Maintain min and max latitude and longitude values to compute relative
@@ -393,22 +402,38 @@ class AL:
 
         return
 
-    def read_entry(self, infile):
-        """ Parse a single line from a text file containing a sensor reading.
-        The format is "date time sensorname sensorname value <activitylabel|0>".
+    def process_activity_label(self, event: Dict[str, Union[datetime, float, str, None]]) \
+            -> Optional[str]:
         """
-        try:
-            line = infile.readline()
-            x = str(str(line).strip()).split(' ', 5)
-            if len(x) < 6:
-                return True, x[0], x[1], x[2], x[3], x[4], 'None'
-            else:
-                x[5] = x[5].replace(' ', '_')
-                if self.conf.translate:
-                    x[5] = self.aclass.map_activity_name(x[5])
-                return True, x[0], x[1], x[2], x[3], x[4], x[5]
-        except:
-            return False, None, None, None, None, None, None
+        Process the activity label from the given event. This involves replacing spaces with
+        underscores, and translating the activity name if `translate` is set to True in the config.
+
+        Parameters
+        ----------
+        event : Dict[str, Union[datetime, float, str, None]]
+            An event dictionary with fields mapped to their respective values
+            Normally these would be output from the CSV Data Layer
+
+        Returns
+        -------
+        Optional[str]
+            The cleaned and (possibly) translated event name, or None if the original was None
+        """
+
+        original_label = event[self.conf.label_field_name]
+
+        # Return None if the original label is None:
+        if original_label is None:
+            return None
+
+        # Replace spaces with underscores:
+        cleaned_label = original_label.replace(' ', '_')
+
+        # Translate the label if configured:
+        if self.conf.translate:
+            cleaned_label = self.aclass.map_activity_name(cleaned_label)
+
+        return cleaned_label
 
 
 def new_window(delta, gen, count, conf: config.Config):
@@ -418,57 +443,122 @@ def new_window(delta, gen, count, conf: config.Config):
            ((conf.annotate > 0) and ((count % conf.samplesize) == 0))
 
 
-def end_window(v2, count, conf: config.Config):
-    """ Determine if conditions are met to end the window and add a labeled data
-    point to the sample.
+def end_window(label: Optional[str], count: int, conf: config.Config) -> bool:
     """
+    Check whether conditions are met to end the window and generate a feature vector.
+
+    Parameters
+    ----------
+    label : Optional[str]
+        The processed (and translated, if needed) activity label for the current event
+    count : int
+        Number of events processed overall
+    conf : config.Config
+        The configuration to check things against
+
+    Returns
+    -------
+    bool
+        True if we should end the window and create a feature vector/data point
+    """
+
     fullsize = conf.samplesize - 1
-    return ((conf.annotate == 0) and (v2 != 'Ignore') and (v2 != 'None') and
-            ((count % conf.samplesize) == (conf.samplesize - 1))) or \
-           ((conf.annotate > 0) and ((count % conf.samplesize) == fullsize))
+
+    if conf.annotate == 0:
+        return label is not None and label != 'None' and label != 'Ignore' \
+               and count % conf.samplesize == conf.samplesize - 1
+    elif conf.annotate > 0:
+        return count % conf.samplesize == fullsize
+    else:
+        return False
 
 
-def extract_features(base_filename, al: AL) -> (list, list):
-    """ Extract a feature vector from the window of sensor data to use for
-    classifying the data sequence.
+def extract_features(base_filename: str, al: AL) -> (list, list):
     """
+    Extract feature vectors from the provided file using the given AL object, which should at the
+    least have its config and initialization set up already.
+
+    Will read in the file indicated by the base name, parsing each event and creating windows.
+    When a window is complete, extract features from it for an activity (AL) model, and add the
+    feature vector and ground-truth activity label to `xdata` and `ydata`, respectively.
+
+    Parameters
+    ----------
+    base_filename : str
+        The "base" filename for the file to read - will be prepended with the data path and have the
+        data file extension added to the end (from config)
+    al : AL
+        An `AL` object which has config and initialization done on it
+
+    Returns
+    -------
+    (list, list)
+        `xdata` and `ydata` containing feature vectors and ground-truth activity labels,
+        respectively, for extracted windows.
+    """
+
     xdata = list()
     ydata = list()
+
+    # Load person stats and clusters:
+    # If the .person file for this data does not exist, create it first
     personfile = os.path.join(al.conf.datapath, base_filename + '.person')
     if not os.path.isfile(personfile):
-        print(personfile, "does not exist, generating these stats")
+        print(f"{personfile} does not exist, generating these stats")
         person.main(base_filename, al.conf)
+
     person_stats = np.loadtxt(personfile, delimiter=',')  # person statistics
-    datafile = os.path.join(al.conf.datapath, base_filename + al.conf.extension)
     al_clusters = features.load_clusters(base_filename, al.conf)
 
-    infile = open(datafile, "r")  # process input file to create feature vector
+    # Load the data file through the CSV data layer:
+    datafile = os.path.join(al.conf.datapath, base_filename + al.conf.extension)
+
+    in_data = MobileData(datafile, 'r')
+    in_data.open()
+
     count = 0
-    valid, e_date, e_time, f1, f2, v1, v2 = al.read_entry(infile)
-    prevdt = utils.get_datetime(e_date, e_time)
+
+    prevdt = None  # type: Optional[datetime]
+
     al.resetvars()
     gen = 0
-    while valid:
-        dt = utils.get_datetime(e_date, e_time)
+
+    # Loop over all event rows in the input files:
+    for event in in_data.rows_dict:
+        # Get the event's stamp:
+        dt = event[al.conf.stamp_field_name]
+
+        # Set prevdt to this time if None (first event):
+        if prevdt is None:
+            prevdt = dt
+
         delta = dt - prevdt
+
         if new_window(delta, gen, count, al.conf):  # start new window
             al.resetvars()
             gen = 0
-        pdt, v2, e_date, e_time = al.read_sensors(infile, v1)
-        if end_window(v2, count, al.conf):
+
+        # Update the sensor values for this window:
+        al.update_sensors(event)
+
+        # Get the processed label for this event:
+        label = al.process_activity_label(event)
+
+        if end_window(label, count, al.conf):
             gen = 1
+
             if al.location.valid_location_data(al.latitude, al.longitude, al.altitude):
-                dt = utils.get_datetime(e_date, e_time)
-                xpoint = features.create_point(al, dt, base_filename, person_stats, al_clusters)
+                xpoint = features.create_point(al, dt, person_stats, al_clusters)
+
                 xdata.append(xpoint)
-                ydata.append(v2)
-        if not valid:
-            prevdt = pdt
-        else:
-            prevdt = utils.get_datetime(e_date, e_time)
+                ydata.append(label)
+
+        prevdt = dt
+
         count += 1
-        valid, e_date, e_time, f1, f2, v1, v2 = al.read_entry(infile)
-    infile.close()
+
+    in_data.close()
+
     return xdata, ydata
 
 

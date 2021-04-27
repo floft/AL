@@ -24,6 +24,7 @@ class ExtractFeaturesTest(TestCase):
         # arrange
         test_config = Config(description='test')
         test_config.datapath = './test_data/'  # point to the test data directory
+        test_config.extension = '.instances.csv'  # use the CSV file
 
         test_config.translate = True
         test_config.filter_data = False
@@ -189,6 +190,7 @@ class ExtractFeaturesTest(TestCase):
         # arrange
         test_config = Config(description='test')
         test_config.datapath = './test_data/'  # point to the test data directory
+        test_config.extension = '.instances.csv'  # use the CSV file
 
         test_config.translate = True
         test_config.filter_data = False
@@ -384,6 +386,7 @@ class ExtractFeaturesTest(TestCase):
         # arrange
         test_config = Config(description='test')
         test_config.datapath = './test_data/'  # point to the test data directory
+        test_config.extension = '.instances.csv'  # use the CSV file
 
         test_config.translate = True
         test_config.filter_data = False

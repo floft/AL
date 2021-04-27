@@ -458,7 +458,7 @@ def calculate_time_and_space_features(st, dt: datetime.datetime):
     return month, dayofweek, hours, minutes, seconds, distance, hcr, sr, traj
 
 
-def create_point(st, dt, filename, person_stats, clusters):
+def create_point(st, dt, person_stats, clusters):
     """
     Create a vector representing features for one window of sensor data.
     """
@@ -489,7 +489,7 @@ def create_point(st, dt, filename, person_stats, clusters):
     xpoint += [month, dayofweek, hours, minutes, seconds]
 
     if st.conf.sfeatures == 1:
-        xpoint += person.calculate_person_features(filename, st, person_stats, clusters)
+        xpoint += person.calculate_person_features(st, person_stats, clusters)
 
     if st.conf.gpsfeatures == 1:
         if st.conf.locmodel == 1:
