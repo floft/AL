@@ -31,7 +31,7 @@ import math
 import os.path
 from datetime import datetime
 from multiprocessing import Process, Queue
-from typing import Optional, Dict, Union
+from typing import Optional, Dict, Union, List, Tuple
 
 import joblib
 import numpy as np
@@ -130,12 +130,15 @@ class AL:
         joblib.dump(self.clf, outstr)
         return
 
-    def test_model(self, xdata: list, ydata: list):
-        """ Test an activity model on new data.
-        """
+    def load_model(self):
+        """Load model before being used for test."""
         modelfilename = self.conf.modelpath + "model.pkl"
         with open(modelfilename, 'rb') as f:
             self.clf = joblib.load(f)
+
+    def test_model(self, xdata: list, ydata: list):
+        """ Test an activity model on new data.
+        """
         activity_list = sorted(set(ydata))
         print('Activities:', ' '.join(activity_list))
         print('   (i,j) means true label is i, predicted as j')
@@ -597,6 +600,101 @@ def gather_sensor_features(files: list, al: AL) -> (list, list):
     return xdata, ydata
 
 
+def leave_one_out(files: List[str], al: AL):
+    """
+    Run leave-one-out testing on the list of files. Will cycle through all files, leaving each one
+    out and training on the rest, then testing on the left-out file and reporting results.
+
+    Parameters
+    ----------
+    files : List[str]
+        List of files to use. Should have at least two files
+    al : AL
+        The AL object to use for feature extraction and train/test. Should be pre-initialized.
+    """
+
+    if len(files) < 2:
+        msg = "Need to have at least 2 files for leave-one-out testing"
+        raise ValueError(msg)
+
+    # Get the features for each file:
+    file_data = gather_features_loo(files, al)
+
+    print("Collected data - starting leave-one-out")
+
+    # Now loop through files and leave each one out and do train/test:
+    for test_file in files:
+        print(f"Leaving {test_file} out")
+
+        # Get all other files except this one:
+        train_files = [f for f in files if f != test_file]
+
+        # Create the training data from other files:
+        train_xdata = list()
+        train_ydata = list()
+
+        for train_file in train_files:
+            train_xdata += file_data[train_file][0]
+            train_ydata += file_data[train_file][1]
+
+        # Now train the model:
+        # TODO: Do we need to "reset" the classifier here?
+        al.clf.fit(train_xdata, train_ydata)
+
+        # Now test on the left-out file:
+        print(f"Test results for left-out file {test_file}")
+
+        test_xdata = file_data[test_file][0]
+        test_ydata = file_data[test_file][1]
+
+        al.test_model(test_xdata, test_ydata)
+
+
+def gather_features_loo(files: List[str], al: AL) -> Dict[str, Tuple[List, List]]:
+    """
+    Gather sensor features for leave-one-out testing. Similar to `gather_sensor_features()`, except
+    that the data for each file is stored separately to enable leave-one-out testing.
+
+    Parameters
+    ----------
+    files : List[str]
+        List of files to use. Should have at least two files
+    al : AL
+        The AL object to use for feature extraction and train/test. Should be pre-initialized.
+
+    Returns
+    -------
+    Dict[str, Tuple[List, List]]
+        A dictionary mapping each file name to a tuple of `(xdata, ydata)` values for that file.
+    """
+
+    file_data = dict()
+
+    feature_responses = Queue()  # create feature vectors from set of files
+    feature_processes = list()
+
+    for base_filename in files:
+        feature_processes.append(Process(target=parallel_extract_features,
+                                         args=(feature_responses, base_filename, al,)))
+
+    for i in range(len(feature_processes)):
+        feature_processes[i].start()
+
+    for i in range(len(feature_processes)):
+        file_xdata, file_ydata, datafile, tmp_locations = feature_responses.get()
+
+        file_data[datafile] = (file_xdata, file_ydata)
+
+        al.location.locations = al.location.locations + tmp_locations
+
+        print('{} of {} done: {}'.format(i + 1, len(feature_processes), datafile))
+
+    for i in range(len(feature_processes)):
+        feature_processes[i].join()
+
+    return file_data
+
+
 def main():
     """ Initializations done here because they need to happen whenever we are using
     this file, including in child processes.
@@ -630,6 +728,7 @@ def main():
 
         if cf.mode == config.MODE_TEST_MODEL:
             # Test our pre-trained model.
+            al.load_model()
             al.test_model(xdata=xdata,
                           ydata=ydata)
         elif cf.mode == config.MODE_TRAIN_MODEL:
