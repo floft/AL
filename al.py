@@ -618,7 +618,7 @@ def leave_one_out(files: List[str], al: AL):
         raise ValueError(msg)
 
     # Get the features for each file:
-    file_data = gather_features_loo(files, al)
+    file_data = gather_features_by_file(files, al)
 
     print("Collected data - starting leave-one-out")
 
@@ -650,10 +650,13 @@ def leave_one_out(files: List[str], al: AL):
         al.test_model(test_xdata, test_ydata)
 
 
-def gather_features_loo(files: List[str], al: AL) -> Dict[str, Tuple[List, List]]:
+def gather_features_by_file(files: List[str], al: AL) -> Dict[str, Tuple[List, List]]:
     """
-    Gather sensor features for leave-one-out testing. Similar to `gather_sensor_features()`, except
-    that the data for each file is stored separately to enable leave-one-out testing.
+    Gather sensor features and labels from each of the files provided in sub-processes. This runs
+    the extract_features() function in parallel across all files. We then collect the extracted
+    feature vectors, labels, and locations from each file. The features and labels (`xdata` and
+    `ydata`) are stored separately for each file, while the cached locations are added together
+    and set on the al object.
 
     Parameters
     ----------
