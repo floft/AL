@@ -721,6 +721,9 @@ def main():
         oc.oneclass(conf=cf)
     elif cf.mode == config.MODE_ANNOTATE_DATA:
         al.annotate_data(base_filename=cf.files[0])
+    elif cf.mode == config.MODE_LEAVE_ONE_OUT:
+        # Do special leave-one-out train/test:
+        leave_one_out(files=cf.files, al=al)
     else:
         # The 3 remaining modes all require x,y feature data, so we generate those here.
         xdata, ydata = gather_sensor_features(files=cf.files,
