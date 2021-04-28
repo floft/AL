@@ -576,30 +576,6 @@ def parallel_extract_features(response_queue: Queue, base_filename: str, al: AL)
     return
 
 
-def gather_sensor_features(files: list, al: AL) -> (list, list):
-    """ Fork a set of processes to gather statistical features, one for
-    each input file.
-    """
-    xdata = list()
-    ydata = list()
-    feature_responses = Queue()  # create feature vectors from set of files
-    feature_processes = list()
-    for base_filename in files:
-        feature_processes.append(Process(target=parallel_extract_features,
-                                         args=(feature_responses, base_filename, al,)))
-    for i in range(len(feature_processes)):
-        feature_processes[i].start()
-    for i in range(len(feature_processes)):
-        tmp_xdata, tmp_ydata, datafile, tmp_locations = feature_responses.get()
-        xdata = xdata + tmp_xdata
-        ydata = ydata + tmp_ydata
-        al.location.locations = al.location.locations + tmp_locations
-        print('{} of {} done: {}'.format(i + 1, len(feature_processes), datafile))
-    for i in range(len(feature_processes)):
-        feature_processes[i].join()
-    return xdata, ydata
-
-
 def leave_one_out(files: List[str], al: AL):
     """
     Run leave-one-out testing on the list of files. Will cycle through all files, leaving each one
@@ -729,8 +705,15 @@ def main():
         leave_one_out(files=cf.files, al=al)
     else:
         # The 3 remaining modes all require x,y feature data, so we generate those here.
-        xdata, ydata = gather_sensor_features(files=cf.files,
-                                              al=al)
+        data_by_file = gather_features_by_file(files=cf.files, al=al)
+
+        # For these options, we want to use all files' data at once, so combine them:
+        xdata = list()
+        ydata = list()
+
+        for data in data_by_file.values():
+            xdata = xdata + data[0]
+            ydata = ydata + data[1]
 
         if cf.mode == config.MODE_TEST_MODEL:
             # Test our pre-trained model.
