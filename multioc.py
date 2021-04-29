@@ -172,19 +172,7 @@ class MultiOC(al.AL):
         # Now translate the activities and remove 'Ignore' ones:
         print("Translating labels and filtering for 'Ignore' and 'None'...", end='')
 
-        new_xdata = list()
-        new_ydata = list()
-
-        for i, orig_label in enumerate(ydata):
-            new_label = orig_label
-
-            if self.conf.translate:
-                new_label = self.aclass.map_activity_name(orig_label)
-
-            # Only add instances that don't have 'Ignore' or 'None' for labels:
-            if new_label != 'Ignore' and new_label != 'None':
-                new_xdata.append(oc_xdata[i])
-                new_ydata.append(new_label)
+        new_xdata, new_ydata = self.translate_and_filter_labels(oc_xdata, ydata)
 
         print("done")
 
@@ -197,6 +185,41 @@ class MultiOC(al.AL):
         print("done")
 
         return oc_classifiers, self.clf
+
+    def translate_and_filter_labels(self, xdata: List[List[float]], ydata: List[str]) \
+            -> Tuple[List[List[float]], List[str]]:
+        """
+        Process the provided feature vectors and labels as follows:
+         - Translate labels if needed
+         - Only include a feature vector/label pair in output if the (translated) label is not
+           'Ignore'
+
+        Parameters
+        ----------
+        xdata : List[List[float]]
+            Input (original) feature vectors
+        ydata : List[str]
+            Input (original) activity labels corresponding to the feature vectors
+
+        Returns
+        -------
+        Tuple[List[List[float]], List[str]]
+            The new (translated and filtered) (xdata, ydata) pair
+        """
+
+        new_xdata = list()
+        new_ydata = list()
+
+        for i, orig_label in enumerate(ydata):
+            new_label = orig_label
+
+            if self.conf.translate:
+                new_label = self.aclass.map_activity_name(orig_label)
+
+            # Only add instances that don't have 'Ignore' or 'None' for labels:
+            if new_label != 'Ignore' and new_label != 'None':
+                new_xdata.append(xdata[i])
+                new_ydata.append(new_label)
 
     def train_one_class(self, activity: str, xdata: List[List[float]], ydata: List[str]) \
             -> RandomForestClassifier:
