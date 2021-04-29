@@ -508,6 +508,58 @@ class MultiOC(al.AL):
 
         return new_labels
 
+    def leave_one_out(self, file_data: Dict[str, Tuple[List, List]]):
+        """
+        Perform leave-one-out testing on the data, by cycling through the list of files. For each
+        file, train the models on all the other files' data, then test them on that file's data.
+
+        Parameters
+        ----------
+        file_data : Dict[str, Tuple[List, List]]
+            (xdata, ydata) tuples for each file
+        """
+
+        if len(file_data) < 2:
+            error_msg = "Need to have at least 2 files for leave-one-out testing"
+            raise ValueError(error_msg)
+
+        print("Starting leave-one-out")
+
+        # Get the overall list of activities across all files:
+        all_files_ydata = list()
+
+        for (_, ydata) in file_data.values():
+            all_files_ydata.extend(ydata)
+
+        oc_activities = self.get_oneclass_labels(all_files_ydata)
+
+        # Now do the actual leave-one-out testing:
+        for test_file in file_data.keys():
+            print(f"Leaving {test_file} out")
+
+            # Get all other files except this one:
+            train_files = [f for f in file_data.keys() if f != test_file]
+
+            # Create the training data from other files:
+            train_xdata = list()
+            train_ydata = list()
+
+            for train_file in train_files:
+                train_xdata += file_data[train_file][0]
+                train_ydata += file_data[train_file][1]
+
+            # Train the models:
+            oc_models, mc_model = \
+                self.train_models_for_data(train_xdata, train_ydata, oc_activities)
+
+            # Now test those models:
+            print(f"Test results for left-out file {test_file}")
+
+            test_xdata = file_data[test_file][0]
+            test_ydata = file_data[test_file][1]
+
+            self.test_models(oc_models, mc_model, test_xdata, test_ydata)
+
 
 if __name__ == '__main__':
     """
@@ -537,7 +589,7 @@ if __name__ == '__main__':
         data_by_file = al.gather_features_by_file(files=cf.files, al=moc)
 
         if cf.mode == config.MODE_LEAVE_ONE_OUT:
-            raise NotImplementedError("Need to implement this soon NOTE: NEED TO USE ALL FILES' ACTIVITIES FOR OC")
+            moc.leave_one_out(data_by_file)
         else:
             # We need the total sum of data across all files for train/test, so combine them:
             total_xdata = list()
