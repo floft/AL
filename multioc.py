@@ -157,7 +157,47 @@ class MultiOC(al.AL):
             oc_classifiers[activity] = act_classifier
             print("done")
 
-        # TODO: Need to get one-class-features feature vectors, then train multi-class classifier and return
+        # Add the one-class features to the end of the original feature vectors:
+        print("Adding one-class features to feature vectors")
+
+        if self.conf.multioc_ground_truth_train:
+            print("Using ground-truth label features...")
+        else:
+            print("Using predictions of one-class classifiers...")
+
+        oc_xdata = self.add_oneclass_features(oc_classifiers, xdata, ydata)
+
+        print("Done")
+
+        # Now translate the activities and remove 'Ignore' ones:
+        print("Translating labels and filtering for 'Ignore' and 'None'...", end='')
+
+        new_ydata = list()
+
+        for i, orig_label in enumerate(ydata):
+            new_label = orig_label
+
+            if self.conf.translate:
+                new_label = self.aclass.map_activity_name(orig_label)
+
+            # Remove the instance if the translated label is Ignore or None:
+            if new_label == 'Ignore' or new_label == 'None':
+                del xdata[i]
+            else:
+                # The label is valid, so add this to the list of new labels:
+                new_ydata.append(new_label)
+
+        print("done")
+
+        # Now train the multi-class classifier on the new data:
+        # (self.clf is the AL multi-class classifier configured instance)
+        print("Training multi-class classifier...", end='')
+
+        self.clf.fit(oc_xdata, new_ydata)
+
+        print("done")
+
+        return oc_classifiers, self.clf
 
     def train_one_class(self, activity: str, xdata: List[List[float]], ydata: List[str]) \
             -> RandomForestClassifier:
