@@ -101,6 +101,7 @@ class Config:
         self.activities = list()
         self.numactivities = len(self.default_activities) + 1
         self.oneclass = False
+        self.multioc_ground_truth_train = False  # should multioc use ground-truth one-class feats
         self.files = list()
         return
 
@@ -182,6 +183,12 @@ class Config:
                             action='store_true',
                             help=('Learn one-class classifier for each activity in --activities, '
                                   'default={}'.format(self.oneclass)))
+        parser.add_argument('--multioc-ground-truth',
+                            dest='multioc_ground_truth',
+                            default=self.multioc_ground_truth_train,
+                            action='store_true',
+                            help=('Use ground-truth labels for one-class features for multioc'
+                                  'default=%(default)s'))
         parser.add_argument('files',
                             metavar='FILE',
                             type=str,
@@ -220,6 +227,7 @@ class Config:
         self.activity_list = str(args.activity_list).split(',')
         self.translate = bool(args.translate)
         self.oneclass = bool(args.oneclass)
+        self.multioc_ground_truth_train = bool(args.multioc_ground_truth)
         self.al_n_jobs = int(args.aljobs)
         self.oc_n_jobs = int(args.ocjobs)
         self.loc_n_jobs = int(args.locjobs)
