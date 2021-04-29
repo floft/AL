@@ -15,8 +15,12 @@ value to the vector, then passed through the multi-class classifier.
 
 (Note that only train, test, and loo modes are currently supported.)
 """
+import collections
 from datetime import datetime
 from typing import Dict, Union, Optional, List, Tuple, OrderedDict
+
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 
 import al
 import config
@@ -99,7 +103,55 @@ class MultiOC(al.AL):
             features should be applied to existing vectors), and the multi-class classifier.
         """
 
-        pass
+        oc_classifiers = collections.OrderedDict()
+
+        # Train the one-class classifier for each activity:
+        for activity in activities:
+            print(f"Training one-class classifier for {activity}...", end='')
+            act_classifier = self.train_one_class(activity, xdata, ydata)
+
+            oc_classifiers[activity] = act_classifier
+            print("done")
+
+    def train_one_class(self, activity: str, xdata: List[List[float]], ydata: List[str]) -> object:
+        """
+        Train the one-class classifier for the given activity based on the input features and
+        original labels (`ydata`). We translate the original labels to a binary vector that is `1`
+        whenever the label matches our given activity, then train the model.
+
+        Parameters
+        ----------
+        activity : str
+            The activity to train the classifier for.
+        xdata : List[List[float]]
+            Input (original) feature vectors to train with
+        ydata : List[str]
+            Input (original) activity labels corresponding to the feature vectors
+
+        Returns
+        -------
+        object
+            The trained one-class classifier.
+        """
+
+        # Create label vector where value is 0 unless the label == activity:
+        binary_labels = np.zeros(len(ydata))
+
+        for i, label in ydata:
+            if label == activity:
+                binary_labels[i] = 1
+
+        # Now train the classifier for these values with original features:
+        clf = RandomForestClassifier(n_estimators=100,
+                                     bootstrap=True,
+                                     criterion="entropy",
+                                     class_weight="balanced",
+                                     max_depth=10,
+                                     n_jobs=self.conf.oc_n_jobs)
+
+        clf.fit(xdata, binary_labels)
+
+        return clf
 
 
 if __name__ == '__main__':
