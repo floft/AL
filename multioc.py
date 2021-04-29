@@ -73,8 +73,8 @@ class MultiOC(al.AL):
         # Reduce down to set of unique names:
         all_acts = set(ydata)
 
-        # Return all of them except 'Other':
-        return [a for a in all_acts if a != 'Other']
+        # Return all of them except 'Other', sorted alphabetically:
+        return sorted([a for a in all_acts if a != 'Other'])
 
     def train_model(self, xdata: list, ydata: list):
         """
@@ -192,7 +192,7 @@ class MultiOC(al.AL):
         # (self.clf is the AL multi-class classifier configured instance)
         print("Training multi-class classifier...", end='')
 
-        self.clf.fit(oc_xdata, new_ydata)
+        self.clf.fit(new_xdata, new_ydata)
 
         print("done")
 
