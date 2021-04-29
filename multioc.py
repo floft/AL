@@ -22,6 +22,7 @@ from typing import Dict, Union, Optional, List, Tuple, OrderedDict
 import joblib
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix, classification_report
 
 import al
 import config
@@ -407,13 +408,35 @@ class MultiOC(al.AL):
             Original (un-translated, and possibly including 'Ignore' activities) ground-truth labels
         """
 
-
+        # Load the models:
+        oneclass_models, multiclass_model = self.load_models()
 
         # First translate the ydata labels and only include instances that aren't labeled 'Ignore':
         new_xdata, new_ydata = self.translate_and_filter_labels(xdata, ydata)
 
         # Now make predictions on the new xdata:
-        new_labels = self.test_models_for_data()
+        new_labels = self.test_models_for_data(oneclass_models, multiclass_model, new_xdata)
+
+        # Get list of activities in the new ydata:
+        activity_list = sorted(set(new_ydata))
+
+        # Now output results:
+        print('Activities:', ' '.join(activity_list))
+        print('   (i,j) means true label is i, predicted as j')
+
+        numright = total = 0
+
+        matrix = confusion_matrix(new_ydata, new_labels, labels=activity_list)
+
+        # Calculate the accuracy:
+        for j in range(len(new_ydata)):
+            if new_labels[j] == new_ydata[j]:
+                numright += 1
+            total += 1
+
+        print('test accuracy', float(numright) / float(total), '\n', matrix)
+
+        print(classification_report(new_ydata, new_labels))
 
     @staticmethod
     def test_models_for_data(
