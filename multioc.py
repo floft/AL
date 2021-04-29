@@ -236,22 +236,50 @@ class MultiOC(al.AL):
         xdata_with_oc = list()
 
         for i, xpoint in enumerate(xdata):
-            new_xpoint = list(xpoint)
-
             if self.conf.multioc_ground_truth_train:
                 # We want to use ground-truth labels to create one-class features:
+                new_xpoint = list(xpoint)
+
                 # Set value to 1 for activity that matches the label:
                 oc_feats = [1 if act == ydata[i] else 0 for act in oc_models.keys()]
                 new_xpoint.extend(oc_feats)
             else:
                 # We want to predict using each of the one-class classifiers:
-                for oc_clf in oc_models.values():
-                    prediction = oc_clf.predict([xpoint])
-                    new_xpoint.append(prediction[0])
+                new_xpoint = self.add_oc_predictions(xpoint, oc_models)
 
             xdata_with_oc.append(new_xpoint)
 
         return xdata_with_oc
+
+    @staticmethod
+    def add_oc_predictions(
+            xpoint: List[float],
+            oc_models: OrderedDict[str, RandomForestClassifier]
+    ) -> List[float]:
+        """
+        Add predictions from the one-class classifiers (in order from the dict) to the feature
+        vector, with each one predicting on the original input feature vector.
+
+        Parameters
+        ----------
+        xpoint : List[float]
+            Feature vector to use for predictions and to extend
+        oc_models : OrderedDict[str, RandomForestClassifier]
+            Ordered dictionary of the one-class classifiers (in order we want to use them)
+
+        Returns
+        -------
+        List[float]
+            A copy of the input feature vector with the oc features appended
+        """
+
+        new_xpoint = list(xpoint)
+
+        for oc_clf in oc_models.values():
+            prediction = oc_clf.predict([xpoint])
+            new_xpoint.append(prediction[0])
+
+        return new_xpoint
 
 
 if __name__ == '__main__':
