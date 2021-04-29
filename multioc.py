@@ -15,3 +15,44 @@ value to the vector, then passed through the multi-class classifier.
 
 (Note that only train, test, and loo modes are currently supported.)
 """
+import config
+from al import AL
+
+
+class MultiOC(AL):
+    """
+    Main class to run "multi one-class" activity modeling. Inherits from AL so that we can use most
+    of its functions.
+    """
+
+    pass
+
+
+if __name__ == '__main__':
+    """
+    Initializations done here because they need to happen whenever we are using this file, 
+    including in child processes.
+    """
+
+    cf = config.Config(description='AL Activity Learning')
+    cf.set_parameters()
+
+    moc = MultiOC(conf=cf)
+
+    # Load location model if needed:
+    if cf.locmodel == 1:
+        moc.locclf = moc.location.load_location_model()
+
+    # Load translations if needed:
+    if cf.translate:
+        moc.aclass.read_activity_mappings()
+        moc.location.read_location_mappings()
+
+    # Read cached locations from file:
+    moc.location.read_locations()
+
+    if cf.mode in [config.MODE_TRAIN_MODEL, config.MODE_TEST_MODEL, config.MODE_LEAVE_ONE_OUT]:
+        pass
+    else:
+        msg = f"Mode {cf.mode} is not supported by this script."
+        raise ValueError(msg)
