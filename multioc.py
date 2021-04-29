@@ -157,6 +157,8 @@ class MultiOC(al.AL):
             oc_classifiers[activity] = act_classifier
             print("done")
 
+        # TODO: Need to get one-class-features feature vectors, then train multi-class classifier and return
+
     def train_one_class(self, activity: str, xdata: List[List[float]], ydata: List[str]) -> object:
         """
         Train the one-class classifier for the given activity based on the input features and
@@ -196,6 +198,41 @@ class MultiOC(al.AL):
         clf.fit(xdata, binary_labels)
 
         return clf
+
+    def add_oneclass_features(
+            self,
+            oc_models: OrderedDict[str, object],
+            xdata: List[List[float]],
+            ydata: List[str]
+    ) -> List[List[float]]:
+        """
+        Add oneclass activity features to the ends of existing feature vectors. These will be
+        additional features that indicate whether each instance is an instance of the one-class
+        activity or not (in order of the keys in the `oc_models` input).
+
+        The way these features are formed depends on the value of the config's
+        `multioc_ground_truth_train` value:
+         - If True: Use ground-truth features - the value is `1` if the `ydata` label for that
+         instance matches the activity, otherwise `0`
+         - If False: Have each one-class classifier predict for the given feature vector and use
+         those values.
+
+        Parameters
+        ----------
+        oc_models : OrderedDict[str, object]
+            The one-class classifiers keyed to their activity (in order we want features to be)
+        xdata : List[List[float]]
+            Input (original) feature vectors to train with
+        ydata : List[str]
+            Input (original) activity labels corresponding to the feature vectors
+
+        Returns
+        -------
+        List[List[float]]
+            The new feature vectors with one-class features appended
+        """
+
+        raise NotImplementedError()
 
 
 if __name__ == '__main__':
