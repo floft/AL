@@ -63,6 +63,59 @@ class MultiOC(al.AL):
         # Replace spaces with underscores:
         return original_label.replace(' ', '_')
 
+    def save_models(
+            self,
+            oneclass_models: OrderedDict[str, RandomForestClassifier],
+            multiclass_model: RandomForestClassifier
+    ):
+        """
+        Save the given one-class models and multi-class model to disk as pickle file.
+
+        The models will actually be saved as a pickled dictionary with keys:
+         - oneclass_models: OrderedDict of activity->model pairs for one-class models (in their
+           order)
+         - multiclass_model: The actual multi-class model
+
+        Parameters
+        ----------
+        oneclass_models : OrderedDict[str, RandomForestClassifier]
+            Ordered dictionary of the one-class models, keyed by activity name in order used for
+            training
+        multiclass_model : RandomForestClassifier
+            The multi-class model trained on the original + oc feats feature vectors
+        """
+
+        print("Saving models...", end='')
+
+        models_dict = {
+            'oneclass_models': oneclass_models,
+            'multiclass_model': multiclass_model
+        }
+
+        outstr = self.conf.modelpath + 'multioc_model.pkl'
+        joblib.dump(models_dict, outstr)
+
+        print("done")
+
+    def load_models(self) \
+            -> Tuple[OrderedDict[str, RandomForestClassifier], RandomForestClassifier]:
+        """
+        Load the one-class and multi-class classifiers, returning an OrderedDict of the one-class
+        classifiers followed by the multi-class classifier.
+
+        Expects the models to be stored in a dictionary (see `save_models()` method for format).
+        """
+
+        models_filename = self.conf.modelpath + 'multioc_model.pkl'
+
+        with open(models_filename, 'rb') as f:
+            models_dict = joblib.load(f)  # type: Dict[str, Union[OrderedDict[str, RandomForestClassifier], RandomForestClassifier]]
+
+        oneclass_models = models_dict['oneclass_models']
+        multiclass_model = models_dict['multiclass_model']
+
+        return oneclass_models, multiclass_model
+
     @staticmethod
     def get_oneclass_labels(ydata: List[str]) -> List[str]:
         """
@@ -98,13 +151,7 @@ class MultiOC(al.AL):
         oneclass_models, multiclass_model = self.train_models_for_data(xdata, ydata, oc_activities)
 
         # Dump one-class models:
-        for activity, oc_clf in oneclass_models.items():
-            oc_outstr = self.conf.modelpath + activity + ".pkl"
-            joblib.dump(oc_clf, oc_outstr)
-
-        # Dump the multi-class model:
-        outstr = self.conf.modelpath + "model.pkl"
-        joblib.dump(multiclass_model, outstr)
+        self.save_models(oneclass_models, multiclass_model)
 
     def train_models_for_data(
             self,
@@ -344,30 +391,6 @@ class MultiOC(al.AL):
             new_xpoint.append(prediction[0])
 
         return new_xpoint
-
-    def load_models(self, oc_activities: List[str]) \
-            -> Tuple[OrderedDict[str, RandomForestClassifier], RandomForestClassifier]:
-        """
-        Load the one-class and multi-class classifiers, returning an OrderedDict of the one-class
-        classifiers followed by the multi-class classifier.
-        Parameters
-        ----------
-        oc_activities : List[str]
-            The list of one-class classifier names to look for
-        """
-
-        oc_models = collections.OrderedDict()
-
-        for activity in oc_activities:
-            oc_model_filename = self.conf.modelpath + activity + ".pkl"
-            with open(oc_model_filename, 'rb') as f:
-                oc_models[activity] = joblib.load(f)
-
-        multiclass_model_filename = self.conf.modelpath + "model.pkl"
-        with open(multiclass_model_filename, 'rb') as f:
-            multiclass_model = joblib.load(f)
-
-        return oc_models, multiclass_model
 
     def test_model(self, xdata: list, ydata: list):
         """
