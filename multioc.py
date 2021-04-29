@@ -98,7 +98,7 @@ class MultiOC(al.AL):
         oneclass_models, multiclass_model = self.train_models_for_data(xdata, ydata, oc_activities)
 
         # Dump one-class models:
-        for activity, oc_clf in oneclass_models:
+        for activity, oc_clf in oneclass_models.items():
             oc_outstr = self.conf.modelpath + activity + ".pkl"
             joblib.dump(oc_clf, oc_outstr)
 
