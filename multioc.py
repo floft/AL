@@ -521,7 +521,7 @@ if __name__ == '__main__':
             if cf.mode == config.MODE_TRAIN_MODEL:
                 moc.train_model(total_xdata, total_ydata)
             elif cf.mode == config.MODE_TEST_MODEL:
-                raise NotImplementedError("Need to add this soon")
+                moc.test_model(total_xdata, total_ydata)
     else:
         msg = f"Mode {cf.mode} is not supported by this script."
         raise ValueError(msg)
