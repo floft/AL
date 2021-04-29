@@ -411,6 +411,36 @@ class MultiOC(al.AL):
         # Load the models:
         oneclass_models, multiclass_model = self.load_models()
 
+        # Now run the test:
+        self.test_models(oneclass_models, multiclass_model, xdata, ydata)
+
+    def test_models(
+            self,
+            oneclass_models: OrderedDict[str, RandomForestClassifier],
+            multiclass_model: RandomForestClassifier,
+            xdata: List[List[float]],
+            ydata: List[str]
+    ):
+        """
+        Test saved models on the provided features (`xdata`) and un-translated labels (`ydata`)
+        using the given one-class and multi-class classifiers.
+
+        Includes doing the translation of labels (if needed) and removing 'Ignore' and 'None'
+        labeled vectors from contention.
+
+        Parameters
+        ----------
+        oneclass_models : OrderedDict[str, RandomForestClassifier]
+            Ordered dictionary of the one-class models, keyed by activity name in order used for
+            training
+        multiclass_model : RandomForestClassifier
+            The multi-class model trained on the original + oc feats feature vectors
+        xdata : List[List[float]]
+            Input (original) feature vectors to predict on
+        ydata : List[str]
+            Original (un-translated, and possibly including 'Ignore' activities) ground-truth labels
+        """
+
         # First translate the ydata labels and only include instances that aren't labeled 'Ignore':
         new_xdata, new_ydata = self.translate_and_filter_labels(xdata, ydata)
 
