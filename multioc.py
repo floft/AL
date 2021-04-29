@@ -320,6 +320,46 @@ class MultiOC(al.AL):
 
         return new_xpoint
 
+    @staticmethod
+    def test_models_for_data(
+            oneclass_models: OrderedDict[str, RandomForestClassifier],
+            multiclass_model: RandomForestClassifier,
+            xdata: List[List[float]]
+    ) -> List[str]:
+        """
+        Test multi-one-class models on the given data.
+
+        First use the one-class models to predict each feature vector and add the outputs as
+        "one-class features" to the vectors. Then use the multi-class classifier to make a
+        prediction on each extended feature vector.
+
+        Parameters
+        ----------
+        oneclass_models : OrderedDict[str, RandomForestClassifier]
+            Ordered dictionary of the one-class models, keyed by activity name in order used for
+            training
+        multiclass_model : RandomForestClassifier
+            The multi-class model trained on the original + oc feats feature vectors
+        xdata : List[List[float]]
+            Input (original) feature vectors to predict on
+
+        Returns
+        -------
+        List[str]
+            Predicted labels from multi-class classifier for each vector in xdata
+        """
+
+        oc_xdata = list()
+
+        # Add one-class predictions for each input feature vector:
+        for xpoint in xdata:
+            oc_xdata.append(MultiOC.add_oc_predictions(xpoint, oneclass_models))
+
+        # Now make the predictions on these new features with multi-class model:
+        new_labels = multiclass_model.predict(oc_xdata)
+
+        return new_labels
+
 
 if __name__ == '__main__':
     """
