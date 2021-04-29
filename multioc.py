@@ -16,7 +16,7 @@ value to the vector, then passed through the multi-class classifier.
 (Note that only train, test, and loo modes are currently supported.)
 """
 from datetime import datetime
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, List, Tuple, OrderedDict
 
 import al
 import config
@@ -57,6 +57,49 @@ class MultiOC(al.AL):
 
         # Replace spaces with underscores:
         return original_label.replace(' ', '_')
+
+    def train_models_for_data(
+            self,
+            xdata: List[List[float]],
+            ydata: List[str],
+            activities: List[str]
+    ) -> Tuple[OrderedDict[str, object], object]:
+        """
+        Train one-class and then a multi-class classifier on the provided data. The `xdata` should
+        be original feature vectors, and the `ydata` the original (untranslated) labels.
+
+        This method trains a one-class classifier for each of the provided activities (which
+        should normally not include 'Other'). Each classifier will be trained with a y-value vector
+        with value `1` if the original label matches the one-class activity, or else `0`.
+
+        Then, depending on the status of the config's `multioc_ground_truth_train` parameter,
+        append additional features to the vector, one for each one-class activity, as to whether
+        that instance has that one-class activity detected:
+         - If `multioc_ground_truth_train` is True, use the ground-truth label on the instance (i.e.
+           the one-class feature matching the instance label gets `1`, `0` for others)
+         - If False, use the output of the corresponding one-class classifier on the feature vector.
+
+        Translate the activity labels (if configured to do so), and then drop all instances where
+        the label is 'Ignore'. Then train the multi-class activity classifier on the expanded
+        feature vectors and these new labels.
+
+        Parameters
+        ----------
+        xdata : List[List[float]]
+            Input (original) feature vectors to train with
+        ydata : List[str]
+            Input (original) activity labels corresponding to the feature vectors
+        activities : List[str]
+            List of activities to train one-class classifiers for
+
+        Returns
+        -------
+        Tuple[OrderedDict[str, object], object]
+            An ordered dictionary mapping activity names to one-class classifiers (in order that
+            features should be applied to existing vectors), and the multi-class classifier.
+        """
+
+        pass
 
 
 if __name__ == '__main__':
