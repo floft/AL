@@ -111,7 +111,7 @@ class MultiOC(al.AL):
             xdata: List[List[float]],
             ydata: List[str],
             activities: List[str]
-    ) -> Tuple[OrderedDict[str, object], object]:
+    ) -> Tuple[OrderedDict[str, RandomForestClassifier], RandomForestClassifier]:
         """
         Train one-class and then a multi-class classifier on the provided data. The `xdata` should
         be original feature vectors, and the `ydata` the original (untranslated) labels.
@@ -142,7 +142,7 @@ class MultiOC(al.AL):
 
         Returns
         -------
-        Tuple[OrderedDict[str, object], object]
+        Tuple[OrderedDict[str, RandomForestClassifier], RandomForestClassifier]
             An ordered dictionary mapping activity names to one-class classifiers (in order that
             features should be applied to existing vectors), and the multi-class classifier.
         """
@@ -159,7 +159,8 @@ class MultiOC(al.AL):
 
         # TODO: Need to get one-class-features feature vectors, then train multi-class classifier and return
 
-    def train_one_class(self, activity: str, xdata: List[List[float]], ydata: List[str]) -> object:
+    def train_one_class(self, activity: str, xdata: List[List[float]], ydata: List[str]) \
+            -> RandomForestClassifier:
         """
         Train the one-class classifier for the given activity based on the input features and
         original labels (`ydata`). We translate the original labels to a binary vector that is `1`
@@ -176,7 +177,7 @@ class MultiOC(al.AL):
 
         Returns
         -------
-        object
+        RandomForestClassifier
             The trained one-class classifier.
         """
 
@@ -201,7 +202,7 @@ class MultiOC(al.AL):
 
     def add_oneclass_features(
             self,
-            oc_models: OrderedDict[str, object],
+            oc_models: OrderedDict[str, RandomForestClassifier],
             xdata: List[List[float]],
             ydata: List[str]
     ) -> List[List[float]]:
@@ -219,7 +220,7 @@ class MultiOC(al.AL):
 
         Parameters
         ----------
-        oc_models : OrderedDict[str, object]
+        oc_models : OrderedDict[str, RandomForestClassifier]
             The one-class classifiers keyed to their activity (in order we want features to be)
         xdata : List[List[float]]
             Input (original) feature vectors to train with
@@ -232,7 +233,25 @@ class MultiOC(al.AL):
             The new feature vectors with one-class features appended
         """
 
-        raise NotImplementedError()
+        xdata_with_oc = list()
+
+        for i, xpoint in enumerate(xdata):
+            new_xpoint = list(xpoint)
+
+            if self.conf.multioc_ground_truth_train:
+                # We want to use ground-truth labels to create one-class features:
+                # Set value to 1 for activity that matches the label:
+                oc_feats = [1 if act == ydata[i] else 0 for act in oc_models.keys()]
+                new_xpoint.extend(oc_feats)
+            else:
+                # We want to predict using each of the one-class classifiers:
+                for oc_clf in oc_models.values():
+                    prediction = oc_clf.predict([xpoint])
+                    new_xpoint.append(prediction[0])
+
+            xdata_with_oc.append(new_xpoint)
+
+        return xdata_with_oc
 
 
 if __name__ == '__main__':
