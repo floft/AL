@@ -172,6 +172,7 @@ class MultiOC(al.AL):
         # Now translate the activities and remove 'Ignore' ones:
         print("Translating labels and filtering for 'Ignore' and 'None'...", end='')
 
+        new_xdata = list()
         new_ydata = list()
 
         for i, orig_label in enumerate(ydata):
@@ -180,11 +181,9 @@ class MultiOC(al.AL):
             if self.conf.translate:
                 new_label = self.aclass.map_activity_name(orig_label)
 
-            # Remove the instance if the translated label is Ignore or None:
-            if new_label == 'Ignore' or new_label == 'None':
-                del xdata[i]
-            else:
-                # The label is valid, so add this to the list of new labels:
+            # Only add instances that don't have 'Ignore' or 'None' for labels:
+            if new_label != 'Ignore' and new_label != 'None':
+                new_xdata.append(oc_xdata[i])
                 new_ydata.append(new_label)
 
         print("done")
