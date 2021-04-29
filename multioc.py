@@ -19,6 +19,7 @@ import collections
 from datetime import datetime
 from typing import Dict, Union, Optional, List, Tuple, OrderedDict
 
+import joblib
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
@@ -61,6 +62,49 @@ class MultiOC(al.AL):
 
         # Replace spaces with underscores:
         return original_label.replace(' ', '_')
+
+    @staticmethod
+    def get_oneclass_labels(ydata: List[str]) -> List[str]:
+        """
+        Get the activity labels from the ydata that we will use for one-class classifiers.
+        That is, all labels except 'Other'.
+        """
+
+        # Reduce down to set of unique names:
+        all_acts = set(ydata)
+
+        # Return all of them except 'Other':
+        return [a for a in all_acts if a != 'Other']
+
+    def train_model(self, xdata: list, ydata: list):
+        """
+        Train one-class and multi-class activity models on the provided features and original
+        labels.
+
+        Override the base class os we can do the special one-class training here.
+
+        Parameters
+        ----------
+        xdata : list
+            Input (original) feature vectors to train with
+        ydata : list
+            Input (original) activity labels corresponding to the feature vectors
+        """
+
+        # Get the activities for one-class classifiers:
+        oc_activities = self.get_oneclass_labels(ydata)
+
+        # Train the models:
+        oneclass_models, multiclass_model = self.train_models_for_data(xdata, ydata, oc_activities)
+
+        # Dump one-class models:
+        for activity, oc_clf in oneclass_models:
+            oc_outstr = self.conf.modelpath + activity + ".pkl"
+            joblib.dump(oc_clf, oc_outstr)
+
+        # Dump the multi-class model:
+        outstr = self.conf.modelpath + "model.pkl"
+        joblib.dump(multiclass_model, outstr)
 
     def train_models_for_data(
             self,
@@ -137,7 +181,7 @@ class MultiOC(al.AL):
         # Create label vector where value is 0 unless the label == activity:
         binary_labels = np.zeros(len(ydata))
 
-        for i, label in ydata:
+        for i, label in enumerate(ydata):
             if label == activity:
                 binary_labels[i] = 1
 
@@ -180,6 +224,23 @@ if __name__ == '__main__':
     if cf.mode in [config.MODE_TRAIN_MODEL, config.MODE_TEST_MODEL, config.MODE_LEAVE_ONE_OUT]:
         # We need feature vectors and labels for these modes, so extract the features:
         data_by_file = al.gather_features_by_file(files=cf.files, al=moc)
+
+        if cf.mode == config.MODE_LEAVE_ONE_OUT:
+            raise NotImplementedError("Need to implement this soon NOTE: NEED TO USE ALL FILES' ACTIVITIES FOR OC")
+        else:
+            # We need the total sum of data across all files for train/test, so combine them:
+            total_xdata = list()
+            total_ydata = list()
+
+            for data in data_by_file.values():
+                total_xdata = total_xdata + data[0]
+                total_ydata = total_ydata + data[1]
+
+            # Now actually train/test:
+            if cf.mode == config.MODE_TRAIN_MODEL:
+                moc.train_model(total_xdata, total_ydata)
+            elif cf.mode == config.MODE_TEST_MODEL:
+                raise NotImplementedError("Need to add this soon")
     else:
         msg = f"Mode {cf.mode} is not supported by this script."
         raise ValueError(msg)
