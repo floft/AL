@@ -345,53 +345,64 @@ class MultiOC(al.AL):
             The new feature vectors with one-class features appended
         """
 
-        xdata_with_oc = list()
+        if self.conf.multioc_ground_truth_train:
+            # We want to use ground-truth labels to create one-class features:
+            xdata_with_oc = list()
 
-        for i, xpoint in enumerate(xdata):
-            if self.conf.multioc_ground_truth_train:
-                # We want to use ground-truth labels to create one-class features:
+            for i, xpoint in enumerate(xdata):
                 new_xpoint = list(xpoint)
 
                 # Set value to 1 for activity that matches the label:
                 oc_feats = [1 if act == ydata[i] else 0 for act in oc_models.keys()]
                 new_xpoint.extend(oc_feats)
-            else:
-                # We want to predict using each of the one-class classifiers:
-                new_xpoint = self.add_oc_predictions(xpoint, oc_models)
 
-            xdata_with_oc.append(new_xpoint)
+                xdata_with_oc.append(new_xpoint)
 
-        return xdata_with_oc
+            return xdata_with_oc
+        else:
+            # Use the predictions from the one-class classifiers instead:
+            return self.add_oc_predictions(xdata, oc_models)
 
     @staticmethod
     def add_oc_predictions(
-            xpoint: List[float],
+            xdata: List[List[float]],
             oc_models: OrderedDict[str, RandomForestClassifier]
-    ) -> List[float]:
+    ) -> List[List[float]]:
         """
         Add predictions from the one-class classifiers (in order from the dict) to the feature
         vector, with each one predicting on the original input feature vector.
 
         Parameters
         ----------
-        xpoint : List[float]
-            Feature vector to use for predictions and to extend
+        xdata : List[List[float]]
+            Feature vectors to use for predictions and to extend
         oc_models : OrderedDict[str, RandomForestClassifier]
             Ordered dictionary of the one-class classifiers (in order we want to use them)
 
         Returns
         -------
-        List[float]
-            A copy of the input feature vector with the oc features appended
+        List[List[float]]
+            A copy of the input feature vectors with the oc features appended
         """
 
-        new_xpoint = list(xpoint)
+        new_xdata = list()
 
-        for oc_clf in oc_models.values():
-            prediction = oc_clf.predict([xpoint])
-            new_xpoint.append(prediction[0])
+        # Make predictions for each classifier on all of the data at once (for speed):
+        oc_predictions = collections.OrderedDict()
 
-        return new_xpoint
+        for activity, clf in oc_models.items():
+            oc_predictions[activity] = clf.predict(xdata)
+
+        # Now create the new xdata by appending the predictions to each feature vector:
+        for i, xpoint in enumerate(xdata):
+            new_xpoint = list(xpoint)
+
+            for act_predictions in oc_predictions.values():
+                new_xpoint.append(act_predictions[i])
+
+            new_xdata.append(new_xpoint)
+
+        return new_xdata
 
     def test_model(self, xdata: list, ydata: list):
         """
@@ -497,11 +508,8 @@ class MultiOC(al.AL):
             Predicted labels from multi-class classifier for each vector in xdata
         """
 
-        oc_xdata = list()
-
         # Add one-class predictions for each input feature vector:
-        for xpoint in xdata:
-            oc_xdata.append(MultiOC.add_oc_predictions(xpoint, oneclass_models))
+        oc_xdata = MultiOC.add_oc_predictions(xdata, oneclass_models)
 
         # Now make the predictions on these new features with multi-class model:
         new_labels = multiclass_model.predict(oc_xdata)
