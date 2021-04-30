@@ -29,6 +29,7 @@
 # Code and data may not be used or distributed without permission from WSU.
 import math
 import os.path
+from collections import deque
 from datetime import datetime
 from multiprocessing import Process, Queue
 from typing import Optional, Dict, Union, List, Tuple
@@ -75,23 +76,23 @@ class AL:
                                           max_depth=10,
                                           n_jobs=self.conf.al_n_jobs)
         self.locclf = None
-        self.yaw = list()
-        self.pitch = list()
-        self.roll = list()
-        self.rotx = list()
-        self.roty = list()
-        self.rotz = list()
-        self.accx = list()
-        self.accy = list()
-        self.accz = list()
-        self.acctotal = list()
-        self.latitude = list()
-        self.longitude = list()
-        self.altitude = list()
-        self.course = list()
-        self.speed = list()
-        self.hacc = list()
-        self.vacc = list()
+        self.yaw = deque(maxlen=conf.samplesize)
+        self.pitch = deque(maxlen=conf.samplesize)
+        self.roll = deque(maxlen=conf.samplesize)
+        self.rotx = deque(maxlen=conf.samplesize)
+        self.roty = deque(maxlen=conf.samplesize)
+        self.rotz = deque(maxlen=conf.samplesize)
+        self.accx = deque(maxlen=conf.samplesize)
+        self.accy = deque(maxlen=conf.samplesize)
+        self.accz = deque(maxlen=conf.samplesize)
+        self.acctotal = deque(maxlen=conf.samplesize)
+        self.latitude = deque(maxlen=conf.samplesize)
+        self.longitude = deque(maxlen=conf.samplesize)
+        self.altitude = deque(maxlen=conf.samplesize)
+        self.course = deque(maxlen=conf.samplesize)
+        self.speed = deque(maxlen=conf.samplesize)
+        self.hacc = deque(maxlen=conf.samplesize)
+        self.vacc = deque(maxlen=conf.samplesize)
         self.minlat = 90.0
         self.maxlat = -90.0
         self.minlong = 180.0
@@ -247,23 +248,23 @@ class AL:
     def resetvars(self):
         """ Initialize the feature arrays.
         """
-        self.yaw = list()
-        self.pitch = list()
-        self.roll = list()
-        self.rotx = list()
-        self.roty = list()
-        self.rotz = list()
-        self.accx = list()
-        self.accy = list()
-        self.accz = list()
-        self.acctotal = list()
-        self.latitude = list()
-        self.longitude = list()
-        self.altitude = list()
-        self.course = list()
-        self.speed = list()
-        self.hacc = list()
-        self.vacc = list()
+        self.yaw.clear()
+        self.pitch.clear()
+        self.roll.clear()
+        self.rotx.clear()
+        self.roty.clear()
+        self.rotz.clear()
+        self.accx.clear()
+        self.accy.clear()
+        self.accz.clear()
+        self.acctotal.clear()
+        self.latitude.clear()
+        self.longitude.clear()
+        self.altitude.clear()
+        self.course.clear()
+        self.speed.clear()
+        self.hacc.clear()
+        self.vacc.clear()
         self.minlat = 90.0
         self.maxlat = -90.0
         self.minlong = 180.0
