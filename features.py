@@ -344,8 +344,8 @@ def generate_features(x, cf: config.Config, include_absolute_features=True):
     """
     flist = list()
 
-    while len(x) > cf.samplesize:  # remove elements outside current window
-        x = x[:cf.samplesize]
+    if len(x) > cf.samplesize:  # remove elements before current window
+        x = x[-cf.samplesize:]
 
     # Set up values needed in both absolute and relative features:
     mean_value = np.mean(x)
