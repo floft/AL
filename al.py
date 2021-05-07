@@ -201,47 +201,65 @@ class AL:
         return
 
     def annotate_data(self, base_filename: str):
-        """ Load the activity model and use it to label new data.
-        Assume new data is input at the specified sample rate.
         """
+        Use an activity model to label new data. Assumes that the input data is at the sample rate
+        specified in the config (and used to train the model).
+
+        Parameters
+        ----------
+        base_filename : str
+            The filename we wish to annotate
+        """
+
         lines = list()
 
         # Load person stats.
         personfile = os.path.join(self.conf.datapath, base_filename + '.person')
         if not os.path.isfile(personfile):
-            print(personfile, "does not exist, generating these stats")
-            person.main(base_filename=base_filename,
-                        cf=self.conf)
+            print(f"{personfile} does not exist, generating these stats")
+            person.main(base_filename, self.conf)
+
         person_stats = np.loadtxt(personfile, delimiter=',')
-        al_clusters = features.load_clusters(base_filename=base_filename,
-                                             cf=self.conf)
+        al_clusters = features.load_clusters(base_filename, self.conf)
 
         # Load model.
         instr = os.path.join(self.conf.modelpath, 'model.pkl')
         if not os.path.isfile(instr):
-            print(instr, "model file does not exist")
+            print(f"{instr} model file does not exist")
             exit()
+
         clf = joblib.load(instr)
 
         infile = os.path.join(self.conf.datapath, base_filename + self.conf.extension)
+
         annotated_datafile = os.path.join(self.conf.datapath, base_filename + '.ann')
         outfile = open(annotated_datafile, "w")
+
         count = 0
+
         for line in open(infile):
             count += 1
+
             lines.append(utils.process_entry(line))
+
             # Collect one set of sensor readings
             if (count % self.conf.numsensors) == 0 and count >= self.conf.windowsize:
                 dt = self.read_sensors_from_window(lines)
+
                 xpoint = features.create_point(self, dt, person_stats, al_clusters)
+
                 xdata = [xpoint]
                 newlabel = clf.predict(xdata)[0]
+
                 if self.conf.annotate == 1:
                     self.output_window(outfile, count, lines, newlabel)
                 else:
                     self.output_combined_window(outfile, count, lines, newlabel)
+
                 lines = lines[self.conf.numsensors:]  # delete one set of readings
+
         outfile.close()
+        
         return
 
     def resetvars(self):
