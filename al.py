@@ -275,8 +275,6 @@ class AL:
                 else:
                     self.output_combined_window(outfile, count, lines, newlabel)
 
-                lines = lines[self.conf.numsensors:]  # delete one set of readings
-
         in_data.close()
         out_data.close()
 
