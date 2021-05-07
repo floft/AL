@@ -308,56 +308,6 @@ class AL:
         self.maxlong = -180.0
         return
 
-    def read_sensors_from_window(self, lines):
-        """ Read and store one set of sensor readings.
-        """
-        self.resetvars()
-        dt = None
-        for i in range(self.conf.numseconds):
-            line = lines[i * self.conf.numsensors + 0]
-            self.yaw.append(utils.clean(float(line[4]), -5.0, 5.0))
-            line = lines[i * self.conf.numsensors + 1]
-            self.pitch.append(utils.clean(float(line[4]), -5.0, 5.0))
-            line = lines[i * self.conf.numsensors + 2]
-            self.roll.append(utils.clean(float(line[4]), -5.0, 5.0))
-            line = lines[i * self.conf.numsensors + 3]
-            self.rotx.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 4]
-            self.roty.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 5]
-            self.rotz.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 6]
-            v1 = utils.clean(float(line[4]), -1.0, 1.0)
-            self.accx.append(v1)
-            temp = v1 * v1
-            line = lines[i * self.conf.numsensors + 7]
-            v1 = utils.clean(float(line[4]), -1.0, 1.0)
-            self.accy.append(v1)
-            temp += v1 * v1
-            line = lines[i * self.conf.numsensors + 8]
-            v1 = utils.clean(float(line[4]), -1.0, 1.0)
-            self.accz.append(v1)
-            temp += v1 * v1
-            self.acctotal.append(np.sqrt(temp))
-            line = lines[i * self.conf.numsensors + 9]
-            self.latitude.append(float(line[4]))
-            self.update_location_range(float(line[4]), datatype="latitude")
-            line = lines[i * self.conf.numsensors + 10]
-            self.longitude.append(float(line[4]))
-            self.update_location_range(float(line[4]), datatype="longitude")
-            line = lines[i * self.conf.numsensors + 11]
-            self.altitude.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 12]
-            self.course.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 13]
-            self.speed.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 14]
-            self.hacc.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 15]
-            self.vacc.append(float(line[4]))
-            dt = utils.get_datetime(line[0], line[1])
-        return dt
-
     def update_sensors(self, event: Dict[str, Union[datetime, float, str, None]]):
         """
         Update the sensor lists based on the input event.
