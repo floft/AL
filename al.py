@@ -213,7 +213,7 @@ class AL:
         """
 
         # Keep track of the most recent window (samplesize rows) of data:
-        window_rows = deque(maxlen=self.conf.samplesize)
+        window_events = deque(maxlen=self.conf.samplesize)
 
         # Load person stats.
         personfile = os.path.join(self.conf.datapath, base_filename + '.person')
@@ -248,15 +248,22 @@ class AL:
 
         count = 0
 
-        for row in in_data.rows_dict:
+        for event in in_data.rows_dict:
             count += 1
 
-            window_rows.append(row)
+            window_events.append(event)
 
             # Create feature vector and label starting with the first row where we have a full
             # window:
             if count >= self.conf.samplesize:
-                dt = self.read_sensors_from_window(lines)
+                # Reset the sensor lists, then populate with values from current window:
+                self.resetvars()
+
+                for win_event in window_events:
+                    self.update_sensors(win_event)
+
+                # Get the timestamp of the most recent event:
+                dt = event[self.conf.stamp_field_name]
 
                 xpoint = features.create_point(self, dt, person_stats, al_clusters)
 
