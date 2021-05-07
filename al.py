@@ -29,6 +29,7 @@
 # Code and data may not be used or distributed without permission from WSU.
 import math
 import os.path
+from collections import deque
 from datetime import datetime
 from multiprocessing import Process, Queue
 from typing import Optional, Dict, Union, List, Tuple
@@ -211,7 +212,8 @@ class AL:
             The filename we wish to annotate
         """
 
-        lines = list()
+        # Keep track of the most recent window (samplesize rows) of data:
+        window_rows = deque(maxlen=self.conf.samplesize)
 
         # Load person stats.
         personfile = os.path.join(self.conf.datapath, base_filename + '.person')
@@ -231,19 +233,29 @@ class AL:
         clf = joblib.load(instr)
 
         infile = os.path.join(self.conf.datapath, base_filename + self.conf.extension)
-
         annotated_datafile = os.path.join(self.conf.datapath, base_filename + '.ann')
-        outfile = open(annotated_datafile, "w")
+
+        in_data = MobileData(infile, 'r')
+        out_data = MobileData(annotated_datafile, 'w')
+
+        in_data.open()
+        out_data.open()
+
+        # Write fields from input file to output:
+        fields = in_data.fields
+        out_data.set_fields(fields)
+        out_data.write_headers()
 
         count = 0
 
-        for line in open(infile):
+        for row in in_data.rows_dict:
             count += 1
 
-            lines.append(utils.process_entry(line))
+            window_rows.append(row)
 
-            # Collect one set of sensor readings
-            if (count % self.conf.numsensors) == 0 and count >= self.conf.windowsize:
+            # Create feature vector and label starting with the first row where we have a full
+            # window:
+            if count >= self.conf.samplesize:
                 dt = self.read_sensors_from_window(lines)
 
                 xpoint = features.create_point(self, dt, person_stats, al_clusters)
@@ -258,8 +270,9 @@ class AL:
 
                 lines = lines[self.conf.numsensors:]  # delete one set of readings
 
-        outfile.close()
-        
+        in_data.close()
+        out_data.close()
+
         return
 
     def resetvars(self):
