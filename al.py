@@ -312,7 +312,7 @@ class AL:
                 for clf_name, clf in classifiers.items():
                     new_labels[clf_name] = str(clf.predict(xdata)[0])
 
-                if count == self.conf.windowsize:
+                if count == self.conf.samplesize:
                     # We've just reached the first full window
                     # Write out all events in the window with this label:
                     for win_event in window_events:
