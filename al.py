@@ -248,7 +248,6 @@ class AL:
         in_data.open()
 
         out_data = self.get_output_file_object(annotated_datafile, output_special_format)
-        out_data.open()
 
         # Write fields from input file to output:
         fields = in_data.fields
@@ -307,7 +306,8 @@ class AL:
         create a `MobileData` object for the output. Otherwise, if it's True, we will output in the
         special "combined CSV" format, so use a normal file object.
 
-        In either case, the object will not be "opened" - you will want to do this yourself.
+        In either case, the object will be "opened" - so you will want to call `close()` on it
+        later.
 
         Parameters
         ----------
@@ -325,7 +325,10 @@ class AL:
         if output_as_special:
             return open(out_filename, 'w')  # regular file for writing special CSV
         else:
-            return MobileData(out_filename, 'w')  # MobileData object for normal CSV output
+            out_data = MobileData(out_filename, 'w')  # MobileData object for normal CSV output
+            out_data.open()
+
+            return out_data
 
     def write_event(
             self,
