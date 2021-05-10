@@ -131,12 +131,18 @@ class AL:
         joblib.dump(self.clf, outstr)
         return
 
-    def load_model(self) -> RandomForestClassifier:
-        """Load multi-class model and return it."""
+    def load_models(self) -> [RandomForestClassifier]:
+        """
+        Load multi-class model and return it.
+
+        Note that this function allows returning multiple models (for override in sub-classes), but
+        we only return the one multi-class model.
+        """
+
         modelfilename = os.path.join(self.conf.modelpath, 'model.pkl')
 
         with open(modelfilename, 'rb') as f:
-            return joblib.load(f)
+            return [joblib.load(f)]
 
     def test_model(self, xdata: list, ydata: list):
         """ Test an activity model on new data.
@@ -794,7 +800,7 @@ def main():
 
         if cf.mode == config.MODE_TEST_MODEL:
             # Test our pre-trained model.
-            al.clf = al.load_model()
+            al.clf = al.load_models()[0]
             al.test_model(xdata=xdata,
                           ydata=ydata)
         elif cf.mode == config.MODE_TRAIN_MODEL:
