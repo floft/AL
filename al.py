@@ -280,50 +280,32 @@ class AL:
 
         return
 
-    def write_events_normal(
+    def write_event_normal(
             self,
             out_data: MobileData,
-            window_events: List[Dict[str, Union[datetime, float, str, None]]],
-            label: str,
-            is_first_window: bool = False
+            event: Dict[str, Union[datetime, float, str, None]],
+            label: str
     ):
         """
-        Write out one or more events from the given window to the output data file in normal CSV
-        data format (one timestamp per line with all sensors listed), with the given label on each
-        line.
-
-        If `is_first_window` is `True`, then we write out all events in the window (this would be
-        used to write out events that occurred before the window was first full).
-
-        Otherwise, only write the last event in the window this time.
+        Write out an event to the output data file in normal CSV data format (one timestamp per
+        line with all sensors listed), with the given label set.
 
         Parameters
         ----------
         out_data : MobileData
             The MobileData (file) object to write the output events to
-        window_events : List[Dict[str, Union[datetime, float, str, None]]]
+        event : Dict[str, Union[datetime, float, str, None]]
             The event dictionaries for the sensor events in the window that was labeled
         label : str
             The activity label to apply for these events
-        is_first_window : bool, default False
-            Whether this is the first window to write out (if so, write all events in window,
-            otherwise only write the latest event).
         """
 
-        # Check if we should write out all events in the window:
-        if is_first_window:
-            start_event = 0  # start with the first event
-        else:
-            start_event = -1  # only use the last event
+        # Make a copy of the event and apply the given label:
+        event_copy = dict(event)
+        event_copy[self.conf.label_field_name] = label
 
-        # Now write out the events:
-        for event in window_events[start_event:]:
-            # Make a copy of the event and apply the given label:
-            event_copy = dict(event)
-            event_copy[self.conf.label_field_name] = label
-
-            # Write the event:
-            out_data.write_row_dict(event_copy)
+        # Write the event:
+        out_data.write_row_dict(event_copy)
 
     def resetvars(self):
         """ Initialize the feature arrays.
