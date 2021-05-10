@@ -225,13 +225,7 @@ class AL:
         person_stats = np.loadtxt(personfile, delimiter=',')
         al_clusters = features.load_clusters(base_filename, self.conf)
 
-        # Load model.
-        instr = os.path.join(self.conf.modelpath, 'model.pkl')
-        if not os.path.isfile(instr):
-            print(f"{instr} model file does not exist")
-            exit()
-
-        clf = joblib.load(instr)
+        clf = self.load_model()
 
         infile = os.path.join(self.conf.datapath, base_filename + self.conf.extension)
         annotated_datafile = os.path.join(self.conf.datapath, base_filename + '.ann')
