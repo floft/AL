@@ -27,12 +27,13 @@
 #
 # Copyright (c) 2020. Washington State University (WSU). All rights reserved.
 # Code and data may not be used or distributed without permission from WSU.
+import collections
 import math
 import os.path
 from collections import deque
 from datetime import datetime
 from multiprocessing import Process, Queue
-from typing import Optional, Dict, Union, List, Tuple, TextIO
+from typing import Optional, Dict, Union, List, Tuple, TextIO, OrderedDict
 
 import joblib
 import numpy as np
@@ -131,7 +132,7 @@ class AL:
         joblib.dump(self.clf, outstr)
         return
 
-    def load_models(self) -> [RandomForestClassifier]:
+    def load_models(self) -> OrderedDict[str, RandomForestClassifier]:
         """
         Load multi-class model and return it.
 
@@ -140,9 +141,12 @@ class AL:
         """
 
         modelfilename = os.path.join(self.conf.modelpath, 'model.pkl')
+        models = collections.OrderedDict()
 
         with open(modelfilename, 'rb') as f:
-            return [joblib.load(f)]
+            models['multi_class_activity'] = joblib.load(f)
+
+        return models
 
     def test_model(self, xdata: list, ydata: list):
         """ Test an activity model on new data.
@@ -800,7 +804,7 @@ def main():
 
         if cf.mode == config.MODE_TEST_MODEL:
             # Test our pre-trained model.
-            al.clf = al.load_models()[0]
+            al.clf = al.load_models()['multi_class_activity']  # load the multi-class activity model
             al.test_model(xdata=xdata,
                           ydata=ydata)
         elif cf.mode == config.MODE_TRAIN_MODEL:
