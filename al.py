@@ -273,10 +273,10 @@ class AL:
                     # We've just reached the first full window
                     # Write out all events in the window with this label:
                     for win_event in window_events:
-                        self.write_event_normal(out_data, win_event, newlabel)
+                        self.write_event(out_data, win_event, newlabel, output_special_format)
                 else:
                     # Only write out the most recent event:
-                    self.write_event_normal(out_data, window_events[-1], newlabel)
+                    self.write_event(out_data, window_events[-1], newlabel, output_special_format)
 
         in_data.close()
         out_data.close()
@@ -311,6 +311,38 @@ class AL:
             return open(out_filename, 'w')  # regular file for writing special CSV
         else:
             return MobileData(out_filename, 'w')  # MobileData object for normal CSV output
+
+    def write_event(
+            self,
+            out_data: Union[TextIO, MobileData],
+            event: Dict[str, Union[datetime, float, str, None]],
+            label: str,
+            output_as_special: bool = False
+    ):
+        """
+        Write out an event to the output datafile with the specific label.
+
+        If `output_as_special` is False (the default), we will output data in normal CSV format.
+        Otherwise, if it's True, we will output in the special "combined CSV" format.
+
+        We call the appropriate function to do the actual output based on this.
+
+        Parameters
+        ----------
+        out_data : Union[TextIO, MobileData]
+            The object to write output data to
+        event : Dict[str, Union[datetime, float, str, None]]
+            The event dictionaries for the sensor events in the window that was labeled
+        label : str
+            The activity label to apply for these events
+        output_as_special : bool, default False
+            Whether we'll output to a normal CSV file (if True) or "special combined" CSV format
+        """
+
+        if output_as_special:
+            raise NotImplementedError()
+        else:
+            self.write_event_normal(out_data, event, label)
 
     def write_event_normal(
             self,
