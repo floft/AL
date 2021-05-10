@@ -247,12 +247,15 @@ class AL:
         in_data = MobileData(infile, 'r')
         in_data.open()
 
-        out_data = self.get_output_file_object(annotated_datafile, output_special_format)
+        # Set up field info from the input file:
+        fields = collections.OrderedDict(in_data.fields)
 
-        # Write fields from input file to output:
-        fields = in_data.fields
-        out_data.set_fields(fields)
-        out_data.write_headers()
+        # Add the classifier fields for labels:
+        for clf_name in classifiers.keys():
+            fields[clf_name] = 's'
+
+        out_data = self.get_output_file_object(annotated_datafile, fields,
+                                               output_special_format)
 
         count = 0
 
@@ -298,8 +301,11 @@ class AL:
         return
 
     @staticmethod
-    def get_output_file_object(out_filename: str, output_as_special: bool = False) \
-            -> Union[TextIO, MobileData]:
+    def get_output_file_object(
+            out_filename: str,
+            fields: OrderedDict[str, str],
+            output_as_special: bool = False
+    ) -> Union[TextIO, MobileData]:
         """
         Set up the output file object that will be used, based on the annotation setting.
         If `output_as_special` is False (the default), we will output data in normal CSV format, so
@@ -313,6 +319,8 @@ class AL:
         ----------
         out_filename : str
             The name of the file we will write to
+        fields : OrderedDict[str, str]
+            The dictionary of fields to use if writing to standard CSV format
         output_as_special : bool, default False
             Whether we'll output to a normal CSV file (if True) or "special combined" CSV format
 
@@ -327,6 +335,9 @@ class AL:
         else:
             out_data = MobileData(out_filename, 'w')  # MobileData object for normal CSV output
             out_data.open()
+
+            out_data.set_fields(fields)
+            out_data.write_headers()
 
             return out_data
 
