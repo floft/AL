@@ -270,10 +270,14 @@ class AL:
                 xdata = [xpoint]
                 newlabel = clf.predict(xdata)[0]
 
-                if self.conf.annotate == 1:
-                    self.output_window(outfile, count, lines, newlabel)
+                if count == self.conf.windowsize:
+                    # We've just reached the first full window
+                    # Write out all events in the window with this label:
+                    for win_event in window_events:
+                        self.write_event_normal(out_data, win_event, newlabel)
                 else:
-                    self.output_combined_window(outfile, count, lines, newlabel)
+                    # Only write out the most recent event:
+                    self.write_event_normal(out_data, window_events[-1], newlabel)
 
         in_data.close()
         out_data.close()
