@@ -32,7 +32,7 @@ import os.path
 from collections import deque
 from datetime import datetime
 from multiprocessing import Process, Queue
-from typing import Optional, Dict, Union, List, Tuple
+from typing import Optional, Dict, Union, List, Tuple, TextIO
 
 import joblib
 import numpy as np
@@ -213,6 +213,10 @@ class AL:
             The filename we wish to annotate
         """
 
+        # Determine whether we'll write to regular CSV or the special "combined CSV" format
+        # We will write as regular format if annotate == 1, otherwise use special
+        output_special_format = self.conf.annotate != 1
+
         # Keep track of the most recent window (samplesize rows) of data:
         window_events = deque(maxlen=self.conf.samplesize)
 
@@ -231,9 +235,9 @@ class AL:
         annotated_datafile = os.path.join(self.conf.datapath, base_filename + '.ann')
 
         in_data = MobileData(infile, 'r')
-        out_data = MobileData(annotated_datafile, 'w')
-
         in_data.open()
+
+        out_data = self.get_output_file_object(annotated_datafile, output_special_format)
         out_data.open()
 
         # Write fields from input file to output:
@@ -278,6 +282,35 @@ class AL:
         out_data.close()
 
         return
+
+    @staticmethod
+    def get_output_file_object(out_filename: str, output_as_special: bool = False) \
+            -> Union[TextIO, MobileData]:
+        """
+        Set up the output file object that will be used, based on the annotation setting.
+        If `output_as_special` is False (the default), we will output data in normal CSV format, so
+        create a `MobileData` object for the output. Otherwise, if it's True, we will output in the
+        special "combined CSV" format, so use a normal file object.
+
+        In either case, the object will not be "opened" - you will want to do this yourself.
+
+        Parameters
+        ----------
+        out_filename : str
+            The name of the file we will write to
+        output_as_special : bool, default False
+            Whether we'll output to a normal CSV file (if True) or "special combined" CSV format
+
+        Returns
+        -------
+        Union[TextIO, MobileData]
+            Either a MobileData object (if writing normal CSV) or a file object (for special CSV)
+        """
+
+        if output_as_special:
+            return open(out_filename, 'w')  # regular file for writing special CSV
+        else:
+            return MobileData(out_filename, 'w')  # MobileData object for normal CSV output
 
     def write_event_normal(
             self,
