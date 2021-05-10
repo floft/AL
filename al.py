@@ -131,11 +131,12 @@ class AL:
         joblib.dump(self.clf, outstr)
         return
 
-    def load_model(self):
-        """Load model before being used for test."""
-        modelfilename = self.conf.modelpath + "model.pkl"
+    def load_model(self) -> RandomForestClassifier:
+        """Load multi-class model and return it."""
+        modelfilename = os.path.join(self.conf.modelpath, 'model.pkl')
+
         with open(modelfilename, 'rb') as f:
-            self.clf = joblib.load(f)
+            return joblib.load(f)
 
     def test_model(self, xdata: list, ydata: list):
         """ Test an activity model on new data.
@@ -734,7 +735,7 @@ def main():
 
         if cf.mode == config.MODE_TEST_MODEL:
             # Test our pre-trained model.
-            al.load_model()
+            al.clf = al.load_model()
             al.test_model(xdata=xdata,
                           ydata=ydata)
         elif cf.mode == config.MODE_TRAIN_MODEL:
