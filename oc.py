@@ -7,6 +7,9 @@ Written by Diane J. Cook and Bryan Minor, Washington State University
 Copyright (c) 2021. Washington State University (WSU). All rights reserved.
 Code and data may not be used or distributed without permission from WSU.
 """
+from datetime import datetime
+from typing import Dict, Union, Optional
+
 import config
 from al import AL, gather_features_by_file
 
@@ -18,7 +21,26 @@ class OC(AL):
     Uses base code from the `AL` class but overridden for one-class models.
     """
 
-    pass
+    def process_activity_label(self, event: Dict[str, Union[datetime, float, str, None]]) \
+            -> Optional[str]:
+        """
+        Override the base activity label processing to NOT translate the activity name here.
+        We will only replace spaces with underscores.
+
+        We later will use the translations when determining individual one-class activity model
+        positive/negative examples.
+        """
+
+        original_label = event[self.conf.label_field_name]
+
+        # Return None if the original label is None:
+        if original_label is None:
+            return None
+
+        # Replace spaces with underscores:
+        cleaned_label = original_label.replace(' ', '_')
+
+        return cleaned_label
 
 
 def main():
