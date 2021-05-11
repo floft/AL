@@ -191,53 +191,6 @@ class AL:
         print(classification_report(ydata, newlabels))
         return
 
-    def output_window(self, outfile, count, lines, newlabel):
-        """ Write a single window of annotated sensor readings to a file.
-        """
-        if count == self.conf.windowsize:  # Process beginning before full window
-            start = 0
-        else:
-            start = self.conf.windowsize - self.conf.numsensors
-        for i in range(start, self.conf.windowsize):
-            outstr = '{} {} {} {} {} {}\n'.format(lines[i][0],
-                                                  lines[i][1],
-                                                  lines[i][2],
-                                                  lines[i][3],
-                                                  lines[i][4],
-                                                  newlabel)
-            outfile.write(outstr)
-        return
-
-    def output_combined_window(self, outfile, count, lines, newlabel):
-        """ Write a single window of annotated sensor readings as a single csv line
-        to a file.
-        """
-        dt1 = datetime.strptime("2010-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")
-        if count == self.conf.windowsize:  # Process beginning before full window
-            start = 0
-        else:
-            start = self.conf.samplesize - 1
-        for i in range(start, self.conf.samplesize):
-            for j in range(self.conf.numsensors):
-                offset = i * self.conf.numsensors
-                outstr = ''
-                if j == 0:
-                    dt2 = datetime.strptime(lines[offset + j][0] + " 00:00:00",
-                                            "%Y-%m-%d %H:%M:%S")
-                    dt = utils.get_datetime(lines[offset + j][0], lines[offset + j][1])
-                    delta = dt - dt1
-                    days = delta.days
-                    delta = dt - dt2
-                    seconds = delta.seconds
-                    outstr = str(days) + ',' + str(seconds) + ','
-                outstr += lines[offset + j][4]
-                if j < (self.conf.numsensors - 1):
-                    outstr += ','
-                else:
-                    outstr += ',' + newlabel + '\n'
-                    outfile.write(outstr)
-        return
-
     def annotate_data(self, base_filename: str):
         """
         Use an activity model to label new data. Assumes that the input data is at the sample rate
