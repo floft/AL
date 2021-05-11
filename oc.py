@@ -130,7 +130,11 @@ class OC(AL):
         binary_labels = np.zeros(len(ydata))
 
         for i, label in enumerate(ydata):
-            label_translations = self.translate_label(label)
+            # Translate the label if configured, otherwise just use the one original label:
+            if self.conf.translate:
+                label_translations = self.translate_label(label)
+            else:
+                label_translations = [label]
 
             # If the activity is one of the translations, mark this as a positive (1) example:
             if activity in label_translations:
