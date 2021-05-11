@@ -27,11 +27,13 @@
 #
 # Copyright (c) 2020. Washington State University (WSU). All rights reserved.
 # Code and data may not be used or distributed without permission from WSU.
+import collections
 import math
 import os.path
+from collections import deque
 from datetime import datetime
 from multiprocessing import Process, Queue
-from typing import Optional, Dict, Union, List, Tuple
+from typing import Optional, Dict, Union, List, Tuple, TextIO, OrderedDict
 
 import joblib
 import numpy as np
@@ -61,6 +63,32 @@ warnings.warn = warn
 
 
 class AL:
+
+    # Name to use for the multi-class classifier field in data and classifier dictionaries:
+    multi_class_clf_field = 'multi_class_activity'
+
+    # Names of sensor values to include in Digital Marker "combined CSV" format:
+    dm_format_sensors = [
+        'yaw',
+        'pitch',
+        'roll',
+        'rotation_rate_x',
+        'rotation_rate_y',
+        'rotation_rate_z',
+        'user_acceleration_x',
+        'user_acceleration_y',
+        'user_acceleration_z',
+        'latitude',
+        'longitude',
+        'altitude',
+        'course',
+        'speed',
+        'horizontal_accuracy',
+        'vertical_accuracy'
+    ]
+
+    # Base date to use for "days" field for DM format:
+    dm_base_date = datetime(year=2010, month=1, day=1, hour=0, minute=0, second=0)
 
     def __init__(self, conf: config.Config):
         """ Constructor
@@ -130,11 +158,21 @@ class AL:
         joblib.dump(self.clf, outstr)
         return
 
-    def load_model(self):
-        """Load model before being used for test."""
-        modelfilename = self.conf.modelpath + "model.pkl"
+    def load_models(self) -> OrderedDict[str, RandomForestClassifier]:
+        """
+        Load multi-class model and return it.
+
+        Note that this function allows returning multiple models (for override in sub-classes), but
+        we only return the one multi-class model.
+        """
+
+        modelfilename = os.path.join(self.conf.modelpath, 'model.pkl')
+        models = collections.OrderedDict()
+
         with open(modelfilename, 'rb') as f:
-            self.clf = joblib.load(f)
+            models[AL.multi_class_clf_field] = joblib.load(f)
+
+        return models
 
     def test_model(self, xdata: list, ydata: list):
         """ Test an activity model on new data.
@@ -153,96 +191,257 @@ class AL:
         print(classification_report(ydata, newlabels))
         return
 
-    def output_window(self, outfile, count, lines, newlabel):
-        """ Write a single window of annotated sensor readings to a file.
-        """
-        if count == self.conf.windowsize:  # Process beginning before full window
-            start = 0
-        else:
-            start = self.conf.windowsize - self.conf.numsensors
-        for i in range(start, self.conf.windowsize):
-            outstr = '{} {} {} {} {} {}\n'.format(lines[i][0],
-                                                  lines[i][1],
-                                                  lines[i][2],
-                                                  lines[i][3],
-                                                  lines[i][4],
-                                                  newlabel)
-            outfile.write(outstr)
-        return
-
-    def output_combined_window(self, outfile, count, lines, newlabel):
-        """ Write a single window of annotated sensor readings as a single csv line
-        to a file.
-        """
-        dt1 = datetime.strptime("2010-01-01 00:00:00", "%Y-%m-%d %H:%M:%S")
-        if count == self.conf.windowsize:  # Process beginning before full window
-            start = 0
-        else:
-            start = self.conf.samplesize - 1
-        for i in range(start, self.conf.samplesize):
-            for j in range(self.conf.numsensors):
-                offset = i * self.conf.numsensors
-                outstr = ''
-                if j == 0:
-                    dt2 = datetime.strptime(lines[offset + j][0] + " 00:00:00",
-                                            "%Y-%m-%d %H:%M:%S")
-                    dt = utils.get_datetime(lines[offset + j][0], lines[offset + j][1])
-                    delta = dt - dt1
-                    days = delta.days
-                    delta = dt - dt2
-                    seconds = delta.seconds
-                    outstr = str(days) + ',' + str(seconds) + ','
-                outstr += lines[offset + j][4]
-                if j < (self.conf.numsensors - 1):
-                    outstr += ','
-                else:
-                    outstr += ',' + newlabel + '\n'
-                    outfile.write(outstr)
-        return
-
     def annotate_data(self, base_filename: str):
-        """ Load the activity model and use it to label new data.
-        Assume new data is input at the specified sample rate.
         """
-        lines = list()
+        Use an activity model to label new data. Assumes that the input data is at the sample rate
+        specified in the config (and used to train the model).
+
+        Parameters
+        ----------
+        base_filename : str
+            The filename we wish to annotate
+        """
+
+        # Determine whether we'll write to regular CSV or the "combined CSV" format used for
+        # Digital Markers
+        # We will write as regular format if annotate == 1, otherwise use DM format
+        output_dm_format = self.conf.annotate != 1
+
+        # Keep track of the most recent window (samplesize rows) of data:
+        window_events = deque(maxlen=self.conf.samplesize)
 
         # Load person stats.
         personfile = os.path.join(self.conf.datapath, base_filename + '.person')
         if not os.path.isfile(personfile):
-            print(personfile, "does not exist, generating these stats")
-            person.main(base_filename=base_filename,
-                        cf=self.conf)
-        person_stats = np.loadtxt(personfile, delimiter=',')
-        al_clusters = features.load_clusters(base_filename=base_filename,
-                                             cf=self.conf)
+            print(f"{personfile} does not exist, generating these stats")
+            person.main(base_filename, self.conf)
 
-        # Load model.
-        instr = os.path.join(self.conf.modelpath, 'model.pkl')
-        if not os.path.isfile(instr):
-            print(instr, "model file does not exist")
-            exit()
-        clf = joblib.load(instr)
+        person_stats = np.loadtxt(personfile, delimiter=',')
+        al_clusters = features.load_clusters(base_filename, self.conf)
+
+        classifiers = self.load_models()
 
         infile = os.path.join(self.conf.datapath, base_filename + self.conf.extension)
         annotated_datafile = os.path.join(self.conf.datapath, base_filename + '.ann')
-        outfile = open(annotated_datafile, "w")
+
+        in_data = MobileData(infile, 'r')
+        in_data.open()
+
+        # Set up field info from the input file:
+        fields = collections.OrderedDict(in_data.fields)
+
+        # Add the classifier fields for labels:
+        for clf_name in classifiers.keys():
+            fields[clf_name] = 's'
+
+        out_data = self.get_output_file_object(annotated_datafile, fields, output_dm_format)
+
         count = 0
-        for line in open(infile):
+
+        for event in in_data.rows_dict:
             count += 1
-            lines.append(utils.process_entry(line))
-            # Collect one set of sensor readings
-            if (count % self.conf.numsensors) == 0 and count >= self.conf.windowsize:
-                dt = self.read_sensors_from_window(lines)
+
+            window_events.append(event)
+
+            # Create feature vector and label starting with the first row where we have a full
+            # window:
+            if count >= self.conf.samplesize:
+                # Reset the sensor lists, then populate with values from current window:
+                self.resetvars()
+
+                for win_event in window_events:
+                    self.update_sensors(win_event)
+
+                # Get the timestamp of the most recent event:
+                dt = event[self.conf.stamp_field_name]
+
                 xpoint = features.create_point(self, dt, person_stats, al_clusters)
+
                 xdata = [xpoint]
-                newlabel = clf.predict(xdata)[0]
-                if self.conf.annotate == 1:
-                    self.output_window(outfile, count, lines, newlabel)
+
+                # Now label the data with each classifier:
+                new_labels = collections.OrderedDict()
+
+                for clf_name, clf in classifiers.items():
+                    new_labels[clf_name] = str(clf.predict(xdata)[0])
+
+                if count == self.conf.samplesize:
+                    # We've just reached the first full window
+                    # Write out all events in the window with this label:
+                    for win_event in window_events:
+                        self.write_event(out_data, win_event, new_labels, output_dm_format)
                 else:
-                    self.output_combined_window(outfile, count, lines, newlabel)
-                lines = lines[self.conf.numsensors:]  # delete one set of readings
-        outfile.close()
+                    # Only write out the most recent event:
+                    self.write_event(out_data, window_events[-1], new_labels, output_dm_format)
+
+        in_data.close()
+        out_data.close()
+
         return
+
+    @staticmethod
+    def get_output_file_object(
+            out_filename: str,
+            fields: OrderedDict[str, str],
+            output_dm_format: bool = False
+    ) -> Union[TextIO, MobileData]:
+        """
+        Set up the output file object that will be used, based on the annotation setting.
+        If `output_dm_format` is False (the default), we will output data in normal CSV format, so
+        create a `MobileData` object for the output. Otherwise, if it's True, we will output in the
+        Digital Marker "combined CSV" format, so use a normal file object.
+
+        In either case, the object will be "opened" - so you will want to call `close()` on it
+        later.
+
+        Parameters
+        ----------
+        out_filename : str
+            The name of the file we will write to
+        fields : OrderedDict[str, str]
+            The dictionary of fields to use if writing to standard CSV format
+        output_dm_format : bool, default False
+            Whether we'll output to a normal CSV file (if True) or the DM-input CSV format
+
+        Returns
+        -------
+        Union[TextIO, MobileData]
+            Either a MobileData object (if writing normal CSV) or a file object (for DM CSV)
+        """
+
+        if output_dm_format:
+            return open(out_filename, 'w')  # regular file for writing DM CSV
+        else:
+            out_data = MobileData(out_filename, 'w')  # MobileData object for normal CSV output
+            out_data.open()
+
+            out_data.set_fields(fields)
+            out_data.write_headers()
+
+            return out_data
+
+    def write_event(
+            self,
+            out_data: Union[TextIO, MobileData],
+            event: Dict[str, Union[datetime, float, str, None]],
+            labels: OrderedDict[str, str],
+            output_dm_format: bool = False
+    ):
+        """
+        Write out an event to the output datafile with the specific label.
+
+        If `output_dm_format` is False (the default), we will output data in normal CSV format.
+        Otherwise, if it's True, we will output in the Digital Marker "combined CSV" format.
+
+        We call the appropriate function to do the actual output based on this.
+
+        Parameters
+        ----------
+        out_data : Union[TextIO, MobileData]
+            The object to write output data to
+        event : Dict[str, Union[datetime, float, str, None]]
+            The event dictionaries for the sensor events in the window that was labeled
+        labels : OrderedDict[str, str]
+            The labels generated by models, keyed by their classifier name and in desired order
+        output_dm_format : bool, default False
+            Whether we'll output to a normal CSV file (if True) or DM "combined CSV" format
+        """
+
+        if output_dm_format:
+            self.write_event_dm_format(out_data, event, labels)
+        else:
+            self.write_event_normal(out_data, event, labels)
+
+    def write_event_normal(
+            self,
+            out_data: MobileData,
+            event: Dict[str, Union[datetime, float, str, None]],
+            labels: OrderedDict[str, str]
+    ):
+        """
+        Write out an event to the output data file in normal CSV data format (one timestamp per
+        line with all sensors listed), with the given label set.
+
+        Parameters
+        ----------
+        out_data : MobileData
+            The MobileData (file) object to write the output events to
+        event : Dict[str, Union[datetime, float, str, None]]
+            The event dictionaries for the sensor events in the window that was labeled
+        labels : OrderedDict[str, str]
+            The labels generated by models, keyed by their classifier name and in desired order
+        """
+
+        # Make a copy of the event and set the given labels:
+        event_copy = dict(event)
+
+        for clf_name, label in labels.items():
+            event_copy[clf_name] = label
+
+        # Write the event:
+        out_data.write_row_dict(event_copy)
+
+    def write_event_dm_format(
+            self,
+            out_data: TextIO,
+            event: Dict[str, Union[datetime, float, str, None]],
+            labels: OrderedDict[str, str]
+    ):
+        """
+        Write out an event to the output data file in the Digital Marker "combined CSV" format.
+        This has the following values on each line, separated by commas:
+         - days since 2010-01-01
+         - seconds since midnight on the day of the event
+         - the 16 sensor values (per `AL.dm_format_sensors` value)
+         - the activity labels, in order (usually one-class first, if included, then multi-class)
+           (For the multi-class label, we convert it to an index based on the list in
+           `conf.activity_list`, which should match what the classifier can output)
+
+        Parameters
+        ----------
+        out_data : TextIO
+            The MobileData (file) object to write the output events to
+        event : Dict[str, Union[datetime, float, str, None]]
+            The event dictionaries for the sensor events in the window that was labeled
+        labels : OrderedDict[str, str]
+            The labels generated by models, keyed by their classifier name and in desired order
+        """
+
+        # First set up the days/seconds values:
+        event_stamp = event[self.conf.stamp_field_name]
+
+        days = (event_stamp - AL.dm_base_date).days
+
+        start_of_day = datetime(
+            year=event_stamp.year,
+            month=event_stamp.month,
+            day=event_stamp.day,
+            hour=0,
+            minute=0,
+            second=0
+        )
+        seconds = (event_stamp - start_of_day).seconds
+
+        out_str = f'{days},{seconds}'
+
+        # Now add the values for the sensors we want to include:
+        for sensor in AL.dm_format_sensors:
+            val = event[sensor] if event[sensor] is not None else 0.0  # set None to zero
+
+            out_str += f',{val}'
+
+        # Add the activity values:
+        for clf_name, label in labels.items():
+            # Convert the multi-class label to an integer:
+            out_label = label
+            if clf_name == AL.multi_class_clf_field:
+                out_label = self.conf.activity_list.index(label)
+
+            out_str += f',{out_label}'
+
+        # Now write it to the file:
+        out_str += '\n'
+        out_data.write(out_str)
 
     def resetvars(self):
         """ Initialize the feature arrays.
@@ -269,56 +468,6 @@ class AL:
         self.minlong = 180.0
         self.maxlong = -180.0
         return
-
-    def read_sensors_from_window(self, lines):
-        """ Read and store one set of sensor readings.
-        """
-        self.resetvars()
-        dt = None
-        for i in range(self.conf.numseconds):
-            line = lines[i * self.conf.numsensors + 0]
-            self.yaw.append(utils.clean(float(line[4]), -5.0, 5.0))
-            line = lines[i * self.conf.numsensors + 1]
-            self.pitch.append(utils.clean(float(line[4]), -5.0, 5.0))
-            line = lines[i * self.conf.numsensors + 2]
-            self.roll.append(utils.clean(float(line[4]), -5.0, 5.0))
-            line = lines[i * self.conf.numsensors + 3]
-            self.rotx.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 4]
-            self.roty.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 5]
-            self.rotz.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 6]
-            v1 = utils.clean(float(line[4]), -1.0, 1.0)
-            self.accx.append(v1)
-            temp = v1 * v1
-            line = lines[i * self.conf.numsensors + 7]
-            v1 = utils.clean(float(line[4]), -1.0, 1.0)
-            self.accy.append(v1)
-            temp += v1 * v1
-            line = lines[i * self.conf.numsensors + 8]
-            v1 = utils.clean(float(line[4]), -1.0, 1.0)
-            self.accz.append(v1)
-            temp += v1 * v1
-            self.acctotal.append(np.sqrt(temp))
-            line = lines[i * self.conf.numsensors + 9]
-            self.latitude.append(float(line[4]))
-            self.update_location_range(float(line[4]), datatype="latitude")
-            line = lines[i * self.conf.numsensors + 10]
-            self.longitude.append(float(line[4]))
-            self.update_location_range(float(line[4]), datatype="longitude")
-            line = lines[i * self.conf.numsensors + 11]
-            self.altitude.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 12]
-            self.course.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 13]
-            self.speed.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 14]
-            self.hacc.append(float(line[4]))
-            line = lines[i * self.conf.numsensors + 15]
-            self.vacc.append(float(line[4]))
-            dt = utils.get_datetime(line[0], line[1])
-        return dt
 
     def update_sensors(self, event: Dict[str, Union[datetime, float, str, None]]):
         """
@@ -717,7 +866,7 @@ def main():
 
         if cf.mode == config.MODE_TEST_MODEL:
             # Test our pre-trained model.
-            al.load_model()
+            al.clf = al.load_models()[AL.multi_class_clf_field]  # load the multi-class act model
             al.test_model(xdata=xdata,
                           ydata=ydata)
         elif cf.mode == config.MODE_TRAIN_MODEL:
