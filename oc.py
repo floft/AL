@@ -8,9 +8,11 @@ Copyright (c) 2021. Washington State University (WSU). All rights reserved.
 Code and data may not be used or distributed without permission from WSU.
 """
 import collections
+import os
 from datetime import datetime
 from typing import Dict, Union, Optional, List, OrderedDict
 
+import joblib
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
@@ -25,6 +27,25 @@ class OC(AL):
     Uses base code from the `AL` class but overridden for one-class models.
     """
 
+    def save_models(self, oc_models: Dict[str, RandomForestClassifier]):
+        """
+        Save the passed-in one-class models.
+
+        Parameters
+        ----------
+        oc_models : Dict[str, RandomForestClassifier]
+            The one-class models in a dictionary keyed by their activity names
+        """
+
+        print("Saving models...", end='')
+
+        for activity, model in oc_models.items():
+            model_filename = os.path.join(self.conf.modelpath, f'{activity}.pkl')
+
+            joblib.dump(model, model_filename)
+
+        print("done")
+
     def train_model(self, xdata: list, ydata: list):
         """
         Override training so that we train separate one-class models for each model specified
@@ -36,7 +57,8 @@ class OC(AL):
         # Train the models, using the list of one-class activities from the config:
         oc_classifiers = self.train_models_for_data(xdata, ydata, self.conf.activities)
 
-        raise NotImplementedError()
+        # Save the models to disk:
+        self.save_models(oc_classifiers)
 
     def train_models_for_data(
             self,
