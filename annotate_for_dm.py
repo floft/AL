@@ -23,6 +23,7 @@ from typing import OrderedDict, Union, TextIO, Dict
 import joblib
 from sklearn.ensemble import RandomForestClassifier
 
+import config
 from mobiledata import MobileData
 from oc import OC
 
@@ -81,3 +82,39 @@ class DMAnnotator(OC):
         """
 
         self.write_event_dm_format(out_data, event, labels)
+
+
+def main():
+    """
+    Initialize and then run annotation using combined one- and multi-class models to DM format.
+
+    Throw an error if any other mode is tried.
+    """
+
+    cf = config.Config(description='AL Digital Marker Annotator')
+    cf.set_parameters()
+
+    annotator = DMAnnotator(conf=cf)
+
+    # Load the location model if we need to use it:
+    if cf.locmodel == 1:
+        annotator.locclf = annotator.location.load_location_model()
+
+    # Load translations for locations if needed:
+    if cf.translate:
+        # Don't need to load activity translations as annotation doesn't use them
+
+        # We still need location mappings, though, for feature vector creation:
+        annotator.location.read_location_mappings()
+
+    # Read in existing locations to pre-populate Location object:
+    annotator.location.read_locations()
+
+    if cf.mode == config.MODE_ANNOTATE_DATA:
+        annotator.annotate_data(cf.files[0])
+    else:
+        msg = "This script only support data annotation mode"
+        raise ValueError(msg)
+
+if __name__ == '__main__':
+    main()
