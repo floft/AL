@@ -25,10 +25,6 @@ MODE_AL_TEST_MODEL = 'al_test_model'
 MODE_AL_ANNOTATE_DATA = 'al_annotate_data'
 MODE_LOC_CROSS_VALIDATION = 'loc_cross_validation'
 MODE_LOC_TRAIN_MODEL = 'loc_train_model'
-MODE_OC_CROSS_VALIDATION = 'oc_cross_validation'
-MODE_OC_TRAIN_MODEL = 'oc_train_model'
-MODE_OC_TEST_MODEL = 'oc_test_model'
-MODE_OC_ANNOTATE_DATA = 'oc_annotate_data'
 
 STAMP_CSV_FIELD = 'stamp'  # name of the timestamp field in CSV files
 ACTIVITY_LABEL_CSV_FIELD = 'user_activity_label'  # name of the user activity label field in CSV
@@ -100,7 +96,6 @@ class Config:
                                    'Socialize', 'Sport', 'Travel', 'Walk', 'Work']
         self.activities = list()
         self.numactivities = len(self.default_activities) + 1
-        self.oneclass = False
         self.files = list()
         return
 
@@ -176,12 +171,6 @@ class Config:
                             action='store_true',
                             help=('Map activities to smaller set of activity names, default={}'
                                   .format(self.translate)))
-        parser.add_argument('--oneclass',
-                            dest='oneclass',
-                            default=self.oneclass,
-                            action='store_true',
-                            help=('Learn one-class classifier for each activity in --activities, '
-                                  'default={}'.format(self.oneclass)))
         parser.add_argument('files',
                             metavar='FILE',
                             type=str,
@@ -219,7 +208,6 @@ class Config:
         self.numactivities = len(self.activities) + 1
         self.activity_list = str(args.activity_list).split(',')
         self.translate = bool(args.translate)
-        self.oneclass = bool(args.oneclass)
         self.al_n_jobs = int(args.aljobs)
         self.oc_n_jobs = int(args.ocjobs)
         self.loc_n_jobs = int(args.locjobs)

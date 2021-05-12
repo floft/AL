@@ -43,7 +43,6 @@ import config
 import features
 import gps
 import loc
-import oc
 import person
 import utils
 import warnings
@@ -844,10 +843,7 @@ def main():
         al.location.read_location_mappings()
     al.location.read_locations()
 
-    if cf.oneclass:
-        # Run our modes on the oneclass models instead of AL.
-        oc.oneclass(conf=cf)
-    elif cf.mode == config.MODE_ANNOTATE_DATA:
+    if cf.mode == config.MODE_ANNOTATE_DATA:
         al.annotate_data(base_filename=cf.files[0])
     elif cf.mode == config.MODE_LEAVE_ONE_OUT:
         # Do special leave-one-out train/test:
