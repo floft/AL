@@ -299,7 +299,7 @@ def main():
     oc.location.read_locations()
 
     if cf.mode == config.MODE_ANNOTATE_DATA:
-        raise NotImplementedError()
+        oc.annotate_data(cf.files[0])
     elif cf.mode == config.MODE_LEAVE_ONE_OUT:
         raise NotImplementedError()
     else:
