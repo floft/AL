@@ -100,7 +100,6 @@ class Config:
                                    'Socialize', 'Sport', 'Travel', 'Walk', 'Work']
         self.activities = list()
         self.numactivities = len(self.default_activities) + 1
-        self.oneclass = False
         self.files = list()
         return
 
@@ -176,12 +175,6 @@ class Config:
                             action='store_true',
                             help=('Map activities to smaller set of activity names, default={}'
                                   .format(self.translate)))
-        parser.add_argument('--oneclass',
-                            dest='oneclass',
-                            default=self.oneclass,
-                            action='store_true',
-                            help=('Learn one-class classifier for each activity in --activities, '
-                                  'default={}'.format(self.oneclass)))
         parser.add_argument('files',
                             metavar='FILE',
                             type=str,
@@ -219,7 +212,6 @@ class Config:
         self.numactivities = len(self.activities) + 1
         self.activity_list = str(args.activity_list).split(',')
         self.translate = bool(args.translate)
-        self.oneclass = bool(args.oneclass)
         self.al_n_jobs = int(args.aljobs)
         self.oc_n_jobs = int(args.ocjobs)
         self.loc_n_jobs = int(args.locjobs)
