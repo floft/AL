@@ -116,5 +116,6 @@ def main():
         msg = "This script only support data annotation mode"
         raise ValueError(msg)
 
+
 if __name__ == '__main__':
     main()
