@@ -25,10 +25,6 @@ MODE_AL_TEST_MODEL = 'al_test_model'
 MODE_AL_ANNOTATE_DATA = 'al_annotate_data'
 MODE_LOC_CROSS_VALIDATION = 'loc_cross_validation'
 MODE_LOC_TRAIN_MODEL = 'loc_train_model'
-MODE_OC_CROSS_VALIDATION = 'oc_cross_validation'
-MODE_OC_TRAIN_MODEL = 'oc_train_model'
-MODE_OC_TEST_MODEL = 'oc_test_model'
-MODE_OC_ANNOTATE_DATA = 'oc_annotate_data'
 
 STAMP_CSV_FIELD = 'stamp'  # name of the timestamp field in CSV files
 ACTIVITY_LABEL_CSV_FIELD = 'user_activity_label'  # name of the user activity label field in CSV
