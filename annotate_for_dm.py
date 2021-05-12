@@ -59,6 +59,7 @@ class DMAnnotator(OC):
 
         return models
 
+    @staticmethod
     def get_output_file_object(
             out_filename: str,
             fields: OrderedDict[str, str],
