@@ -214,7 +214,7 @@ class AL:
         events_for_windows = list()
 
         # Temporary:
-        num_wins_to_predict = 1000
+        num_wins_to_predict = 100
 
         # Load person stats.
         personfile = os.path.join(self.conf.datapath, base_filename + '.person')
