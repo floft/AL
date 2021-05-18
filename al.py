@@ -213,9 +213,6 @@ class AL:
         xdata = list()
         events_for_windows = list()
 
-        # Temporary:
-        num_wins_to_predict = 100
-
         # Load person stats.
         personfile = os.path.join(self.conf.datapath, base_filename + '.person')
         if not os.path.isfile(personfile):
@@ -274,7 +271,7 @@ class AL:
                     events_for_windows.append([window_events[-1]])
 
                 # Now actually do the predictions if there are enough vectors:
-                if len(xdata) >= num_wins_to_predict:
+                if len(xdata) >= self.conf.num_wins_batch_predict:
                     # Now label the data with each classifier:
                     self.predict_and_write_events(xdata, events_for_windows, classifiers, out_data,
                                                   output_dm_format)
