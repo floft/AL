@@ -363,8 +363,6 @@ class AL:
             Whether to write the outputs in Digital Marker format
         """
 
-        # TODO: Verify there are no "reused" variables in here that are outside the function's scope
-
         new_labels = collections.OrderedDict()
 
         for clf_name, clf in classifiers.items():
