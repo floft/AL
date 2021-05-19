@@ -209,6 +209,10 @@ class AL:
         # Keep track of the most recent window (samplesize rows) of data:
         window_events = deque(maxlen=self.conf.samplesize)
 
+        # Tracking list of feature vectors and associated events used to form them:
+        xdata = list()
+        events_for_windows = list()
+
         # Load person stats.
         personfile = os.path.join(self.conf.datapath, base_filename + '.person')
         if not os.path.isfile(personfile):
@@ -256,22 +260,33 @@ class AL:
 
                 xpoint = features.create_point(self, dt, person_stats, al_clusters)
 
-                xdata = [xpoint]
+                xdata.append(xpoint)
 
-                # Now label the data with each classifier:
-                new_labels = collections.OrderedDict()
-
-                for clf_name, clf in classifiers.items():
-                    new_labels[clf_name] = str(clf.predict(xdata)[0])
-
+                # Add the associated events that get this window's label to the list:
                 if count == self.conf.samplesize:
-                    # We've just reached the first full window
-                    # Write out all events in the window with this label:
-                    for win_event in window_events:
-                        self.write_event(out_data, win_event, new_labels, output_dm_format)
+                    # First window, so add all events in the window:
+                    events_for_windows.append(list(window_events))
                 else:
-                    # Only write out the most recent event:
-                    self.write_event(out_data, window_events[-1], new_labels, output_dm_format)
+                    # Regular window, so just add the latest event:
+                    events_for_windows.append([window_events[-1]])
+
+                # Now actually do the predictions if there are enough vectors:
+                if len(xdata) >= self.conf.num_wins_batch_predict:
+                    # Now label the data with each classifier:
+                    self.predict_and_write_events(xdata, events_for_windows, classifiers, out_data,
+                                                  output_dm_format)
+
+                    # Reset the lists:
+                    xdata = list()
+                    events_for_windows = list()
+
+                    print(f"Wrote out up to {count} events")
+
+        # Write out any final events:
+        self.predict_and_write_events(xdata, events_for_windows, classifiers, out_data,
+                                      output_dm_format)
+
+        print(f"Wrote out up to {count} events")
 
         in_data.close()
         out_data.close()
@@ -318,6 +333,48 @@ class AL:
             out_data.write_headers()
 
             return out_data
+
+    def predict_and_write_events(
+            self,
+            xdata: List[List[float]],
+            events_for_windows: List[List[Dict[str, Union[datetime, float, str, None]]]],
+            classifiers: OrderedDict[str, RandomForestClassifier],
+            out_data: Union[TextIO, MobileData],
+            output_dm_format: bool
+    ):
+        """
+        Make predictions on the given feature vectors (`xdata`) and then write out the associated
+        events along with their labels.
+
+        Parameters
+        ----------
+        xdata : List[List[float]]
+            List of feature vectors to label
+        events_for_windows : List[List[Dict[str, Union[datetime, float, str, None]]]]
+            List of sensor events associated with each feature vector/window, to write out
+        classifiers : OrderedDict[str, RandomForestClassifier]
+            The models to use for making predictions, in order they should appear in output
+        out_data : Union[TextIO, MobileData]
+            The file to write out data to
+        output_dm_format : bool
+            Whether to write the outputs in Digital Marker format
+        """
+
+        new_labels = collections.OrderedDict()
+
+        for clf_name, clf in classifiers.items():
+            new_labels[clf_name] = clf.predict(xdata)
+
+        # Now write out the events from each prediction:
+        for i, events_for_win in enumerate(events_for_windows):
+            # Get the predictions for the given window index:
+            labels_for_win = collections.OrderedDict({
+                clf_name: predictions[i]
+                for clf_name, predictions in new_labels.items()
+            })
+
+            for win_event in events_for_win:
+                self.write_event(out_data, win_event, labels_for_win, output_dm_format)
 
     def write_event(
             self,
