@@ -218,6 +218,9 @@ class AL:
             warn(msg)
             warn("Some events will not be included in any feature vectors")
 
+        # Track the events that will get the next label we generate:
+        events_for_next_label = deque()
+
         # Tracking list of feature vectors and associated events used to form them:
         xdata = list()
         events_for_windows = list()
@@ -254,6 +257,9 @@ class AL:
             count += 1
 
             window_events.append(event)
+
+            # Add event to list that will get the next label:
+            events_for_next_label.append(event)
 
             # Create feature vector and label starting with the first row where we have a full
             # window:
