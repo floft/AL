@@ -209,6 +209,18 @@ class AL:
         # Keep track of the most recent window (samplesize rows) of data:
         window_events = deque(maxlen=self.conf.samplesize)
 
+        # Check that the number of events between labels is not larger than the window size:
+        if self.conf.ann_num_events_between_labels > self.conf.samplesize:
+            msg = "# of events between labels ({}) larger than window size ({})".format(
+                self.conf.ann_num_events_between_labels,
+                self.conf.samplesize
+            )
+            warn(msg)
+            warn("Some events will not be included in any feature vectors")
+
+        # Track the events that will get the next label we generate:
+        events_for_next_label = deque()
+
         # Tracking list of feature vectors and associated events used to form them:
         xdata = list()
         events_for_windows = list()
@@ -244,31 +256,24 @@ class AL:
         for event in in_data.rows_dict:
             count += 1
 
+            # Add the event to the current window for feature vector generation:
             window_events.append(event)
 
-            # Create feature vector and label starting with the first row where we have a full
-            # window:
-            if count >= self.conf.samplesize:
-                # Reset the sensor lists, then populate with values from current window:
-                self.resetvars()
+            # Add event to list that will get the next label:
+            events_for_next_label.append(event)
 
-                for win_event in window_events:
-                    self.update_sensors(win_event)
-
-                # Get the timestamp of the most recent event:
-                dt = event[self.conf.stamp_field_name]
-
-                xpoint = features.create_point(self, dt, person_stats, al_clusters)
+            # Create feature vector if we have enough events since last label and a full window:
+            if len(events_for_next_label) >= self.conf.ann_num_events_between_labels \
+                    and len(window_events) >= self.conf.samplesize:
+                xpoint = self.create_feature_vector(list(window_events), person_stats, al_clusters)
 
                 xdata.append(xpoint)
 
-                # Add the associated events that get this window's label to the list:
-                if count == self.conf.samplesize:
-                    # First window, so add all events in the window:
-                    events_for_windows.append(list(window_events))
-                else:
-                    # Regular window, so just add the latest event:
-                    events_for_windows.append([window_events[-1]])
+                # Add the events that will get this label to the list:
+                events_for_windows.append(list(events_for_next_label))
+
+                # Clear list of events to prepare for those getting the next label:
+                events_for_next_label.clear()
 
                 # Now actually do the predictions if there are enough vectors:
                 if len(xdata) >= self.conf.num_wins_batch_predict:
@@ -281,6 +286,13 @@ class AL:
                     events_for_windows = list()
 
                     print(f"Wrote out up to {count} events")
+
+        # Create feature vector for any last events since the last one:
+        xpoint = self.create_feature_vector(list(window_events), person_stats, al_clusters)
+
+        xdata.append(xpoint)
+
+        events_for_windows.append(list(events_for_next_label))
 
         # Write out any final events:
         self.predict_and_write_events(xdata, events_for_windows, classifiers, out_data,
@@ -333,6 +345,41 @@ class AL:
             out_data.write_headers()
 
             return out_data
+
+    def create_feature_vector(
+            self,
+            window_events: List[Dict[str, Union[datetime, float, str, None]]],
+            person_stats: np.ndarray,
+            al_clusters: List[List[float]]
+    ) -> List[float]:
+        """
+        Create a feature vector for the events in the window.
+
+        Parameters
+        ----------
+        window_events : List[Dict[str, Union[datetime, float, str, None]]]
+            Window of events to create the feature vector for
+        person_stats : np.ndarray
+            The person stats for this data pulled from file
+        al_clusters : List[List[float]]
+            The cluster centers for the person clusters, pulled from file
+
+        Returns
+        -------
+        List[float]
+            The feature vector created for the window
+        """
+
+        # Reset the sensor lists, then populate with values from current window:
+        self.resetvars()
+
+        for win_event in window_events:
+            self.update_sensors(win_event)
+
+        # Get the timestamp of the most recent event:
+        dt = window_events[-1][self.conf.stamp_field_name]
+
+        return features.create_point(self, dt, person_stats, al_clusters)
 
     def predict_and_write_events(
             self,
