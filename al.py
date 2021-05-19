@@ -258,16 +258,7 @@ class AL:
             # Create feature vector and label starting with the first row where we have a full
             # window:
             if count >= self.conf.samplesize:
-                # Reset the sensor lists, then populate with values from current window:
-                self.resetvars()
-
-                for win_event in window_events:
-                    self.update_sensors(win_event)
-
-                # Get the timestamp of the most recent event:
-                dt = event[self.conf.stamp_field_name]
-
-                xpoint = features.create_point(self, dt, person_stats, al_clusters)
+                xpoint = self.create_feature_vector(list(window_events), person_stats, al_clusters)
 
                 xdata.append(xpoint)
 
@@ -342,6 +333,41 @@ class AL:
             out_data.write_headers()
 
             return out_data
+
+    def create_feature_vector(
+            self,
+            window_events: List[Dict[str, Union[datetime, float, str, None]]],
+            person_stats: np.ndarray,
+            al_clusters: List[List[float]]
+    ) -> List[float]:
+        """
+        Create a feature vector for the events in the window.
+
+        Parameters
+        ----------
+        window_events : List[Dict[str, Union[datetime, float, str, None]]]
+            Window of events to create the feature vector for
+        person_stats : np.ndarray
+            The person stats for this data pulled from file
+        al_clusters : List[List[float]]
+            The cluster centers for the person clusters, pulled from file
+
+        Returns
+        -------
+        List[float]
+            The feature vector created for the window
+        """
+
+        # Reset the sensor lists, then populate with values from current window:
+        self.resetvars()
+
+        for win_event in window_events:
+            self.update_sensors(win_event)
+
+        # Get the timestamp of the most recent event:
+        dt = window_events[-1][self.conf.stamp_field_name]
+
+        return features.create_point(self, dt, person_stats, al_clusters)
 
     def predict_and_write_events(
             self,
