@@ -256,6 +256,7 @@ class AL:
         for event in in_data.rows_dict:
             count += 1
 
+            # Add the event to the current window for feature vector generation:
             window_events.append(event)
 
             # Add event to list that will get the next label:
