@@ -216,6 +216,7 @@ class AL:
                 self.conf.samplesize
             )
             warn(msg)
+            warn("Some events will not be included in any feature vectors")
 
         # Tracking list of feature vectors and associated events used to form them:
         xdata = list()
