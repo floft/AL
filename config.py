@@ -71,6 +71,7 @@ class Config:
         self.cv = 3  # cross validation number of folds
         self.annotate = 0  # label new data from learned model
         self.num_wins_batch_predict = 100  # number of feature vectors to predict at once for ann.
+        self.ann_num_events_between_labels = self.samplesize  # events moved before generating label
         self.extension = '.instances'  # filename extension for training data
         self.datapath = './data/'  # directory containing files of sensor data
         self.modelpath = './models/'  # directory containing trained models
