@@ -262,20 +262,18 @@ class AL:
             # Add event to list that will get the next label:
             events_for_next_label.append(event)
 
-            # Create feature vector and label starting with the first row where we have a full
-            # window:
-            if count >= self.conf.samplesize:
+            # Create feature vector if we have enough events since last label and a full window:
+            if len(events_for_next_label) >= self.conf.ann_num_events_between_labels \
+                    and len(window_events) >= self.conf.samplesize:
                 xpoint = self.create_feature_vector(list(window_events), person_stats, al_clusters)
 
                 xdata.append(xpoint)
 
-                # Add the associated events that get this window's label to the list:
-                if count == self.conf.samplesize:
-                    # First window, so add all events in the window:
-                    events_for_windows.append(list(window_events))
-                else:
-                    # Regular window, so just add the latest event:
-                    events_for_windows.append([window_events[-1]])
+                # Add the events that will get this label to the list:
+                events_for_windows.append(list(events_for_next_label))
+
+                # Clear list of events to prepare for those getting the next label:
+                events_for_next_label.clear()
 
                 # Now actually do the predictions if there are enough vectors:
                 if len(xdata) >= self.conf.num_wins_batch_predict:
@@ -288,6 +286,13 @@ class AL:
                     events_for_windows = list()
 
                     print(f"Wrote out up to {count} events")
+
+        # Create feature vector for any last events since the last one:
+        xpoint = self.create_feature_vector(list(window_events), person_stats, al_clusters)
+
+        xdata.append(xpoint)
+
+        events_for_windows.append(list(events_for_next_label))
 
         # Write out any final events:
         self.predict_and_write_events(xdata, events_for_windows, classifiers, out_data,
