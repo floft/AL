@@ -209,6 +209,14 @@ class AL:
         # Keep track of the most recent window (samplesize rows) of data:
         window_events = deque(maxlen=self.conf.samplesize)
 
+        # Check that the number of events between labels is not larger than the window size:
+        if self.conf.ann_num_events_between_labels > self.conf.samplesize:
+            msg = "# of events between labels ({}) larger than window size ({})".format(
+                self.conf.ann_num_events_between_labels,
+                self.conf.samplesize
+            )
+            warn(msg)
+
         # Tracking list of feature vectors and associated events used to form them:
         xdata = list()
         events_for_windows = list()
