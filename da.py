@@ -76,6 +76,13 @@ def add_location_jitter(orig_window: AL, conf: Config) -> List[DataWindow]:
             conf.da_jitter_limit
         )
 
+        # Compute the new min/max lat/lon:
+        new_window.minlat = min(new_window.latitude)
+        new_window.maxlat = max(new_window.latitude)
+
+        new_window.minlong = min(new_window.longitude)
+        new_window.maxlong = max(new_window.longitude)
+
         # Add the window to the list:
         new_windows.append(new_window)
 
