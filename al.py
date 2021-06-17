@@ -104,6 +104,42 @@ class DataWindow:
         self.maxlat = -90.0
         self.minlong = 180.0
         self.maxlong = -180.0
+        
+    def copy_from(self, data_to_copy: Union['DataWindow', 'AL']):
+        """Copy sensor values, conf, and location from the other object."""
+
+        self.conf = data_to_copy.conf
+        self.location = data_to_copy.location
+
+        # Sensor values in the window:
+        self.yaw = data_to_copy.yaw
+        self.pitch = data_to_copy.pitch
+        self.roll = data_to_copy.roll
+
+        self.rotx = data_to_copy.rotx
+        self.roty = data_to_copy.roty
+        self.rotz = data_to_copy.rotz
+
+        self.accx = data_to_copy.accx
+        self.accy = data_to_copy.accy
+        self.accz = data_to_copy.accz
+        self.acctotal = data_to_copy.acctotal
+
+        self.latitude = data_to_copy.latitude
+        self.longitude = data_to_copy.longitude
+        self.altitude = data_to_copy.altitude
+
+        self.course = data_to_copy.course
+        self.speed = data_to_copy.speed
+
+        self.hacc = data_to_copy.hacc
+        self.vacc = data_to_copy.vacc
+
+        # Min/max location for the window:
+        self.minlat = data_to_copy.minlat
+        self.maxlat = data_to_copy.maxlat
+        self.minlong = data_to_copy.minlong
+        self.maxlong = data_to_copy.maxlong
 
     def resetvars(self):
         """Reset sensor window data."""
