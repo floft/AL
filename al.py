@@ -40,6 +40,7 @@ import numpy as np
 
 import activity
 import config
+import da
 import features
 import gps
 import loc
@@ -914,6 +915,23 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
 
                 xdata.append(xpoint)
                 ydata.append(label)
+
+                # Create points with data augmentation if desired and we're
+                # training a model:
+                if al.conf.mode == config.MODE_TRAIN_MODEL \
+                        and al.conf.data_augmentation:
+                    # Get augmented window copies for current window:
+                    new_windows = da.augment_points(al, al.conf)
+
+                    # Create feature vectors for the new windows and add them:
+                    for win in new_windows:
+                        # Create the feature vector, using the same dt, etc
+                        xpoint = features.create_point(
+                            win, dt, person_stats, al_clusters
+                        )
+
+                        xdata.append(xpoint)
+                        ydata.append(label)
 
         prevdt = dt
 
