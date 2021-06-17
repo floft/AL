@@ -61,6 +61,76 @@ def warn(*args, **kwargs):
 warnings.warn = warn
 
 
+class DataWindow:
+    """
+    Base class to use for tracking sensor data in a window and creating new
+    features.
+
+    TODO: Use this as the base class for AL when we have more time to test?
+    """
+
+    def __init__(
+            self,
+            conf: config.Config,
+            location: loc.Location
+    ):
+        # Store config and location needed for creating features:
+        # TODO: In the future, separate these into another place to have this
+        #  only be window data
+        self.conf = conf
+        self.location = location
+
+        # Sensor values in the window:
+        self.yaw = list()
+        self.pitch = list()
+        self.roll = list()
+        self.rotx = list()
+        self.roty = list()
+        self.rotz = list()
+        self.accx = list()
+        self.accy = list()
+        self.accz = list()
+        self.acctotal = list()
+        self.latitude = list()
+        self.longitude = list()
+        self.altitude = list()
+        self.course = list()
+        self.speed = list()
+        self.hacc = list()
+        self.vacc = list()
+
+        # Min/max location for the window:
+        self.minlat = 90.0
+        self.maxlat = -90.0
+        self.minlong = 180.0
+        self.maxlong = -180.0
+
+    def resetvars(self):
+        """Reset sensor window data."""
+        self.yaw = list()
+        self.pitch = list()
+        self.roll = list()
+        self.rotx = list()
+        self.roty = list()
+        self.rotz = list()
+        self.accx = list()
+        self.accy = list()
+        self.accz = list()
+        self.acctotal = list()
+        self.latitude = list()
+        self.longitude = list()
+        self.altitude = list()
+        self.course = list()
+        self.speed = list()
+        self.hacc = list()
+        self.vacc = list()
+
+        self.minlat = 90.0
+        self.maxlat = -90.0
+        self.minlong = 180.0
+        self.maxlong = -180.0
+
+
 class AL:
 
     # Name to use for the multi-class classifier field in data and classifier dictionaries:
