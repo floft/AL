@@ -40,6 +40,7 @@ import numpy as np
 
 import activity
 import config
+import da
 import features
 import gps
 import loc
@@ -59,6 +60,112 @@ def warn(*args, **kwargs):
 
 
 warnings.warn = warn
+
+
+class DataWindow:
+    """
+    Base class to use for tracking sensor data in a window and creating new
+    features.
+
+    TODO: Use this as the base class for AL when we have more time to test?
+    """
+
+    def __init__(
+            self,
+            conf: config.Config,
+            location: loc.Location
+    ):
+        # Store config and location needed for creating features:
+        # TODO: In the future, separate these into another place to have this
+        #  only be window data
+        self.conf = conf
+        self.location = location
+
+        # Sensor values in the window:
+        self.yaw = list()
+        self.pitch = list()
+        self.roll = list()
+        self.rotx = list()
+        self.roty = list()
+        self.rotz = list()
+        self.accx = list()
+        self.accy = list()
+        self.accz = list()
+        self.acctotal = list()
+        self.latitude = list()
+        self.longitude = list()
+        self.altitude = list()
+        self.course = list()
+        self.speed = list()
+        self.hacc = list()
+        self.vacc = list()
+
+        # Min/max location for the window:
+        self.minlat = 90.0
+        self.maxlat = -90.0
+        self.minlong = 180.0
+        self.maxlong = -180.0
+        
+    def copy_from(self, data_to_copy: Union['DataWindow', 'AL']):
+        """Copy sensor values, conf, and location from the other object."""
+
+        self.conf = data_to_copy.conf
+        self.location = data_to_copy.location
+
+        # Sensor values in the window:
+        self.yaw = data_to_copy.yaw
+        self.pitch = data_to_copy.pitch
+        self.roll = data_to_copy.roll
+
+        self.rotx = data_to_copy.rotx
+        self.roty = data_to_copy.roty
+        self.rotz = data_to_copy.rotz
+
+        self.accx = data_to_copy.accx
+        self.accy = data_to_copy.accy
+        self.accz = data_to_copy.accz
+        self.acctotal = data_to_copy.acctotal
+
+        self.latitude = data_to_copy.latitude
+        self.longitude = data_to_copy.longitude
+        self.altitude = data_to_copy.altitude
+
+        self.course = data_to_copy.course
+        self.speed = data_to_copy.speed
+
+        self.hacc = data_to_copy.hacc
+        self.vacc = data_to_copy.vacc
+
+        # Min/max location for the window:
+        self.minlat = data_to_copy.minlat
+        self.maxlat = data_to_copy.maxlat
+        self.minlong = data_to_copy.minlong
+        self.maxlong = data_to_copy.maxlong
+
+    def resetvars(self):
+        """Reset sensor window data."""
+        self.yaw = list()
+        self.pitch = list()
+        self.roll = list()
+        self.rotx = list()
+        self.roty = list()
+        self.rotz = list()
+        self.accx = list()
+        self.accy = list()
+        self.accz = list()
+        self.acctotal = list()
+        self.latitude = list()
+        self.longitude = list()
+        self.altitude = list()
+        self.course = list()
+        self.speed = list()
+        self.hacc = list()
+        self.vacc = list()
+
+        self.minlat = 90.0
+        self.maxlat = -90.0
+        self.minlong = 180.0
+        self.maxlong = -180.0
 
 
 class AL:
@@ -808,6 +915,23 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
 
                 xdata.append(xpoint)
                 ydata.append(label)
+
+                # Create points with data augmentation if desired and we're
+                # training a model:
+                if al.conf.mode == config.MODE_TRAIN_MODEL \
+                        and al.conf.data_augmentation:
+                    # Get augmented window copies for current window:
+                    new_windows = da.augment_points(al, al.conf)
+
+                    # Create feature vectors for the new windows and add them:
+                    for win in new_windows:
+                        # Create the feature vector, using the same dt, etc
+                        xpoint = features.create_point(
+                            win, dt, person_stats, al_clusters
+                        )
+
+                        xdata.append(xpoint)
+                        ydata.append(label)
 
         prevdt = dt
 
