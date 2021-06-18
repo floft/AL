@@ -101,7 +101,7 @@ def add_jitter_to_list(data: List[float], jitter_limit: float) \
 def create_interpolation_windows(orig_win: AL, conf: Config) \
         -> List[DataWindow]:
     """
-    Create `conf.da_num_interpolations - 2` copies of the data, each with the
+    Create `conf.da_num_interpolations - 1` copies of the data, each with the
     values interpolated at a certain "slice" between each successive pair of
     sensor data values. That is, each will have the values interpolated
     `i / da_num_interpolations` of the way between points across all points and
@@ -113,7 +113,7 @@ def create_interpolation_windows(orig_win: AL, conf: Config) \
 
     Note that we skip the cases where `i = 0` and `i = da_num_interpolations` to
     avoid creating essentially duplicates of the original window. This results
-    in there actually being only `da_num_interpolations - 2` new windows.
+    in there actually being only `da_num_interpolations - 1` new windows.
     """
 
     new_windows = list()  # type: List[DataWindow]
