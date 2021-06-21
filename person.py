@@ -73,39 +73,52 @@ def calculate_person_features(al, person_stats):
     for i in (0, 9, 18, 27, 36):
         distances = np.zeros((3))
         size = min(al.conf.numseconds, len(al.latitude))
+
         lat1 = person_stats[i]
         long1 = person_stats[i+1]
+
         distances[0] = \
             calculate_distance(al.latitude[0], al.longitude[0], lat1, long1)
+
         for j in range(2, size):
-            temp = calculate_distance(al.latitude[j], al.longitude[j], \
+            temp = calculate_distance(al.latitude[j], al.longitude[j],
                                       lat1, long1)
+
             if temp < distances[0]:
                 distances[0] = temp
+
         lat2 = person_stats[i+3]
         long2 = person_stats[i+4]
+
         distances[1] = \
             calculate_distance(al.latitude[0], al.longitude[0], lat2, long2)
+
         for j in range(2, size):
-            temp = calculate_distance(al.latitude[j], al.longitude[j], \
+            temp = calculate_distance(al.latitude[j], al.longitude[j],
                                       lat2, long2)
             if temp < distances[1]:
                 distances[1] = temp
+
         lat3 = person_stats[i+6]
         long3 = person_stats[i+7]
+
         distances[2] = \
             calculate_distance(al.latitude[0], al.longitude[0], lat3, long3)
+
         for j in range(2, size):
-            temp = calculate_distance(al.latitude[j], al.longitude[j], \
+            temp = calculate_distance(al.latitude[j], al.longitude[j],
                                       lat3, long3)
             if temp < distances[2]:
                 distances[2] = temp
+
         closest = np.argmin(distances)
         closest_distance = np.min(distances)
+
         if closest_distance < 0.01:
-           results.append(closest)
+            results.append(closest)
         else:
-           results.append(4)
+            results.append(4)
+    
     return results
 
 
@@ -304,7 +317,7 @@ def most_frequent_staypoints(sprange, mf):
                         else:
                             v3 = (sprange[i][0], sprange[i][1], sprange[i][2])
                             c3 = sprange[i][3]
-                            
+
     return [v1, v2, v3]
 
 
