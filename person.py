@@ -23,7 +23,7 @@ import warnings
 from mobiledata import MobileData
 
 
-def calculate_distance(spanlat, spanlong, lat1, long1, lat2, long2):
+def calculate_mean_distance(spanlat, spanlong, lat1, long1, lat2, long2):
     """ Calculate distance from person's overall mean location.
     """
     if spanlat == 0 or spanlong == 0:
@@ -35,14 +35,19 @@ def calculate_distance(spanlat, spanlong, lat1, long1, lat2, long2):
         return np.sqrt(d1 + d2) / span
 
 
-def close_loc(lat1, long1, alt1, lat2, long2, alt2):
+def calculate_distance(lat1, long1, lat2, long2):
+    d1 = (lat2 - lat1) * (lat2 - lat1)
+    d2 = (long2 - long1) * (long2 - long1)
+    return np.sqrt(d1 + d2)
+
+
+def close_loc(lat1, long1, lat2, long2):
     """ Determine if one location is within threshold distance to another.
     """
     d1 = (lat2 - lat1) * (lat2 - lat1)
     d2 = (long2 - long1) * (long2 - long1)
-    d3 = (alt2 - alt1) * (alt2 - alt1)
-    distance = np.sqrt(d1 + d2 + d3)
-    if distance < 3.0:
+    distance = np.sqrt(d1 + d2)
+    if distance < 0.001:
         return True
     else:
         return False
@@ -64,7 +69,7 @@ def calculate_person_features(al, person_stats, oc_clusters):
     meanlat = person_stats[-5]
     meanlong = person_stats[-4]
 
-    results.append(calculate_distance(spanlat, spanlong, meanlat, meanlong,
+    results.append(calculate_mean_distance(spanlat, spanlong, meanlat, meanlong,
                                       np.mean(al.latitude), np.mean(al.longitude)))
 
     results.append(np.mean(al.latitude) - meanlat)
