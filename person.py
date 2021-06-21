@@ -141,12 +141,8 @@ def read_locations(base_filename: str, cf: config.Config):
 
 
 def generate_person_stats(base_filename, cf: config.Config):
-    """ Generate person-specific statistics from all sensor data for that person,
-    labeled or unlabeled. Statistics include:
-        1. centers of location clusters at times throughout the day
-        2. top-n most-frequent locations
-        3. center of visited locations
-        4. span of visited locations
+    """ Generate person-specific statistics from all sensor data for that
+    person, labeled or unlabeled.
     """
     threshold = 1200   # 2 minutes at 10Hz sample rate
     latitude, longitude, altitude, hour = read_locations(base_filename, cf)
