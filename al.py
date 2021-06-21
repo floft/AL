@@ -48,6 +48,7 @@ import person
 import utils
 import warnings
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
@@ -105,7 +106,7 @@ class DataWindow:
         self.maxlat = -90.0
         self.minlong = 180.0
         self.maxlong = -180.0
-        
+
     def copy_from(self, data_to_copy: Union['DataWindow', 'AL']):
         """Copy sensor values, conf, and location from the other object."""
 
@@ -202,12 +203,12 @@ class AL:
         self.conf = conf
         self.aclass = activity.Activity()
         self.location = loc.Location(conf=self.conf)
-        self.clf = RandomForestClassifier(n_estimators=100,
-                                          bootstrap=True,
-                                          criterion="entropy",
-                                          class_weight="balanced",
-                                          max_depth=10,
-                                          n_jobs=self.conf.al_n_jobs)
+        self.clf = OneVsRestClassifier(RandomForestClassifier(n_estimators=100,
+                                                              bootstrap=True,
+                                                              criterion="entropy",
+                                                              class_weight="balanced",
+                                                              max_depth=10,
+                                                              n_jobs=self.conf.al_n_jobs))
         self.locclf = None
         self.yaw = list()
         self.pitch = list()
