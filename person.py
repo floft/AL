@@ -104,7 +104,7 @@ def read_locations(base_filename: str, cf: config.Config):
                 continue
 
             # Skip if the latitude value is invalid (outside range):
-            if event['latitude'] <= -90.0 or event['latitude'] >= 90.0:
+            if event['latitude'] <= -90.0 or event['latitude'] >= 90.0 or event['latitude'] == 0.0:
                 continue
 
             # At this point, assume all values are valid for this event and add to lists:
