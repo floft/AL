@@ -75,8 +75,6 @@ class Config:
         self.extension = '.instances'  # filename extension for training data
         self.datapath = './data/'  # directory containing files of sensor data
         self.modelpath = './models/'  # directory containing trained models
-        self.clusterpath = './clusters/'  # directory of personal location clusters
-        self.num_hour_clusters = 5  # number of clusters stored for each person
 
         # Data augmentation:
         self.data_augmentation = False  # whether to use data augmentation
@@ -155,12 +153,6 @@ class Config:
                             default=self.modelpath,
                             help=('Directory containing trained models, default={}'
                                   .format(self.modelpath)))
-        parser.add_argument('--clusterpath',
-                            dest='clusterpath',
-                            type=str,
-                            default=self.clusterpath,
-                            help=('Directory of personal location clusters, default={}'
-                                  .format(self.clusterpath)))
         parser.add_argument('--activities',
                             dest='activities',
                             type=str,
@@ -211,7 +203,6 @@ class Config:
         self.extension = args.extension
         self.datapath = args.datapath
         self.modelpath = args.modelpath
-        self.clusterpath = args.clusterpath
         self.activities = str(args.activities).split(',')
         self.numactivities = len(self.activities) + 1
         self.activity_list = str(args.activity_list).split(',')

@@ -339,7 +339,6 @@ class AL:
             person.main(base_filename, self.conf)
 
         person_stats = np.loadtxt(personfile, delimiter=',')
-        al_clusters = features.load_clusters(base_filename, self.conf)
 
         classifiers = self.load_models()
 
@@ -372,7 +371,7 @@ class AL:
             # Create feature vector if we have enough events since last label and a full window:
             if len(events_for_next_label) >= self.conf.ann_num_events_between_labels \
                     and len(window_events) >= self.conf.samplesize:
-                xpoint = self.create_feature_vector(list(window_events), person_stats, al_clusters)
+                xpoint = self.create_feature_vector(list(window_events), person_stats)
 
                 xdata.append(xpoint)
 
@@ -395,7 +394,7 @@ class AL:
                     print(f"Wrote out up to {count} events")
 
         # Create feature vector for any last events since the last one:
-        xpoint = self.create_feature_vector(list(window_events), person_stats, al_clusters)
+        xpoint = self.create_feature_vector(list(window_events), person_stats)
 
         xdata.append(xpoint)
 
@@ -456,8 +455,7 @@ class AL:
     def create_feature_vector(
             self,
             window_events: List[Dict[str, Union[datetime, float, str, None]]],
-            person_stats: np.ndarray,
-            al_clusters: List[List[float]]
+            person_stats: np.ndarray
     ) -> List[float]:
         """
         Create a feature vector for the events in the window.
@@ -468,8 +466,6 @@ class AL:
             Window of events to create the feature vector for
         person_stats : np.ndarray
             The person stats for this data pulled from file
-        al_clusters : List[List[float]]
-            The cluster centers for the person clusters, pulled from file
 
         Returns
         -------
@@ -486,7 +482,7 @@ class AL:
         # Get the timestamp of the most recent event:
         dt = window_events[-1][self.conf.stamp_field_name]
 
-        return features.create_point(self, dt, person_stats, al_clusters)
+        return features.create_point(self, dt, person_stats)
 
     def predict_and_write_events(
             self,
@@ -862,7 +858,7 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
     xdata = list()
     ydata = list()
 
-    # Load person stats and clusters:
+    # Load person stats:
     # If the .person file for this data does not exist, create it first
     personfile = os.path.join(al.conf.datapath, base_filename + '.person')
     if not os.path.isfile(personfile):
@@ -870,7 +866,6 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
         person.main(base_filename, al.conf)
 
     person_stats = np.loadtxt(personfile, delimiter=',')  # person statistics
-    al_clusters = features.load_clusters(base_filename, al.conf)
 
     # Load the data file through the CSV data layer:
     datafile = os.path.join(al.conf.datapath, base_filename + al.conf.extension)
@@ -911,7 +906,7 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
             gen = 1
 
             if al.location.valid_location_data(al.latitude, al.longitude, al.altitude):
-                xpoint = features.create_point(al, dt, person_stats, al_clusters)
+                xpoint = features.create_point(al, dt, person_stats)
 
                 xdata.append(xpoint)
                 ydata.append(label)
@@ -927,7 +922,7 @@ def extract_features(base_filename: str, al: AL) -> (list, list):
                     for win in new_windows:
                         # Create the feature vector, using the same dt, etc
                         xpoint = features.create_point(
-                            win, dt, person_stats, al_clusters
+                            win, dt, person_stats
                         )
 
                         xdata.append(xpoint)

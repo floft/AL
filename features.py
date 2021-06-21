@@ -458,7 +458,7 @@ def calculate_time_and_space_features(st, dt: datetime.datetime):
     return month, dayofweek, hours, minutes, seconds, distance, hcr, sr, traj
 
 
-def create_point(st, dt, person_stats, clusters):
+def create_point(st, dt, person_stats):
     """
     Create a vector representing features for one window of sensor data.
     """
@@ -489,7 +489,7 @@ def create_point(st, dt, person_stats, clusters):
     xpoint += [month, dayofweek, hours, minutes, seconds]
 
     if st.conf.sfeatures == 1:
-        xpoint += person.calculate_person_features(st, person_stats, clusters)
+        xpoint += person.calculate_person_features(st, person_stats)
 
     if st.conf.gpsfeatures == 1:
         if st.conf.locmodel == 1:
@@ -508,13 +508,3 @@ def create_point(st, dt, person_stats, clusters):
         xpoint.extend(st.location.generate_location_features(newname))
 
     return xpoint
-
-
-def load_clusters(base_filename: str, cf: config.Config):
-    """ Load the pre-trained person-specific cluster models.
-    """
-    clusters = list()
-    for i in range(cf.num_hour_clusters):
-        filename = os.path.join(cf.clusterpath, '{}.{}'.format(base_filename, i))
-        clusters.append(joblib.load(filename))
-    return clusters

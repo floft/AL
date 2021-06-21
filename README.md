@@ -107,12 +107,6 @@ Specification of the location where models are stored.
 The default value is `./models/`.
 
 ```
---clusterpath <path_string>
-```
-Specification of the location where person-specific cluster models are stored.
-The default value is `./clusters/`.
-
-```
 --activities <list>
 ```
 Specify list of activities to learn with one-class classifiers. There needs to
@@ -262,17 +256,13 @@ well to multiple people, so more abstract features are used. Before activity
 models are learned, each input file is processed separately to construct
 person-specific information. The information includes the person's mean
 location (`latitude` and `longitude`) and the span of their visited locations
-(`latitude` and `longitude`). To identify frequent locations, k-means clustering
-is applied to determine the overall top location clusters and top location
-clusters by time of day. The learned cluster models are stored in the clusters
-directory and the person-specific features are stored in a file with the
+(`latitude` and `longitude`). The person-specific features are stored in a file with the
 same root name as the input file and a .person suffix. Based on this stored
 information, person-specific features are extracted which include the
 normalized distance of the current sequence from the user's mean location and
-whether the last location in the current sequence belongs to any of the
-learned clusters.  As a note, the person.py script can be run separately using any
-data file, with or without activity labels, to generate person-specific features
-and the associated cluster and .person files.
+information related to their frequenct "staypoints".  As a note, the person.py script can 
+be run separately using any data file, with or without activity labels, to generate 
+person-specific features and the associated .person files.
 
 Additional statistical features are applied to each non-location sensor
 including max, min, sum, mean, median, mean/median absolute value, standard
