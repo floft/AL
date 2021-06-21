@@ -145,34 +145,47 @@ def generate_person_stats(base_filename, cf: config.Config):
     person, labeled or unlabeled.
     """
     threshold = 1200   # 2 minutes at 10Hz sample rate
+
     latitude, longitude, altitude, hour = read_locations(base_filename, cf)
+
     n = len(hour)
     staypoints = []
+
     loc1x = latitude[0]
     loc1y = longitude[0]
     loc1z = altitude[0]
+
     count = 1
     stay = 1
+
     hour1 = hour[0]
+
     while count < n:
         loc2x = latitude[count]
         loc2y = longitude[count]
         loc2z = altitude[count]
-        if close_loc(loc1x, loc1y, loc2x, loc2y) == True:
+
+        if close_loc(loc1x, loc1y, loc2x, loc2y):
             stay += 1
         else:
             if stay >= threshold:
                 hour2 = hour[count]
                 staypoints.append((loc1x, loc1y, loc1z, stay, hour1, hour2))
+
             loc1x = latitude[count]
             loc1y = longitude[count]
             loc1z = altitude[count]
+
             stay = 1
+
             hour1 = hour[count]
+
         count += 1
+
     if stay >= threshold:
         hour2 = hour[count-1]
         staypoints.append((loc1x, loc1y, loc1z, stay, hour1, hour2))
+
     stats = process_staypoints(staypoints)
     stats = np.append(stats, np.mean(latitude))
     stats = np.append(stats, np.mean(longitude))
@@ -188,23 +201,30 @@ def generate_person_stats(base_filename, cf: config.Config):
 
 def process_staypoints(staypoints):
     n = len(staypoints)
+
     sp0_24 = []
     sp0_6 = []
     sp6_12 = []
     sp12_18 = []
     sp18_24 = []
     new_sp = []
+
     for sp in staypoints:
         found = False
+
         for nsp in new_sp:
-            if close_loc(sp[0], sp[1], nsp[0], nsp[1]) == True:
+            if close_loc(sp[0], sp[1], nsp[0], nsp[1]):
                 found = True
+
                 new_sp.remove(nsp)
                 temp = (nsp[0], nsp[1], nsp[2], nsp[3] + sp[3], nsp[4], nsp[5])
                 new_sp.append(temp)
+
                 break
-        if found == False:
+
+        if not found:
             new_sp.append(sp)
+
     for sp in new_sp:
         if sp[4] in range(0, 6) or sp[4] in range(0, 6):
             sp0_6.append(sp)
@@ -214,8 +234,10 @@ def process_staypoints(staypoints):
             sp12_18.append(sp)
         else:
             sp0_24.append(sp)
+
     mf = [staypoints[0], staypoints[0], staypoints[0]]
     mf = most_frequent_staypoints(staypoints, mf)
+
     stats = most_frequent_staypoints(sp0_6, mf)
     stats = np.append(stats, most_frequent_staypoints(sp6_12, mf))
     stats = np.append(stats, most_frequent_staypoints(sp12_18, mf))
@@ -226,11 +248,13 @@ def process_staypoints(staypoints):
 
 def most_frequent_staypoints(sprange, mf):
     n = len(sprange)
+
     if n == 0:   # no staypoints
         return mf
     else:
         v1 = (sprange[0][0], sprange[0][1], sprange[0][2])
         c1 = sprange[0][3]
+
         if n == 1:   # one staypoints
             return [v1, v1, v1]
         else:
@@ -242,6 +266,7 @@ def most_frequent_staypoints(sprange, mf):
             else:
                 v2 = (sprange[1][0], sprange[1][1], sprange[1][2])
                 c2 = sprange[1][3]
+
             if n == 2:   # two staypoints
                 return [v1, v2, v2]
             else:
@@ -260,6 +285,7 @@ def most_frequent_staypoints(sprange, mf):
                     c2 = c1
                     v1 = (sprange[2][0], sprange[2][1], sprange[2][2])
                     c1 = sprange[2][3]
+
                 for i in range(4, n):
                     if sprange[i][3] > c3:
                         if sprange[i][3] > c2:
@@ -278,6 +304,7 @@ def most_frequent_staypoints(sprange, mf):
                         else:
                             v3 = (sprange[i][0], sprange[i][1], sprange[i][2])
                             c3 = sprange[i][3]
+                            
     return [v1, v2, v3]
 
 
