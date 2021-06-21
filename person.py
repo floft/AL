@@ -116,40 +116,6 @@ def read_locations(base_filename: str, cf: config.Config):
     return latitude, longitude, altitude, hour
 
 
-def hour_cluster(base_filename, latitude, longitude, altitude,
-                 hour, n, begin, end, numclusters, cluster_num, cf: config.Config):
-    """ Cluster locations that appear within specified time window.
-    """
-    locs = list()
-    for i in range(n):  # consider points with times between begin and end
-        if ((end < begin) and (hour[i] >= begin or hour[i] <= end)) or \
-                (end > begin and begin <= hour[i] <= end):
-            new = np.zeros(3)
-            new[0] = latitude[i]
-            new[1] = longitude[i]
-            new[2] = altitude[i]
-            locs.append(new)
-    n = len(locs)
-    for i in range(n, numclusters):  # make sure enough points to create clusters
-        new = np.zeros(3)
-        if n == 0:
-            locs.append(new)
-        else:
-            new[0] = latitude[0]
-            new[1] = longitude[0]
-            new[2] = altitude[0]
-            locs.append(new)
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-
-        km = kmeans.KMeans()
-        km.sorted_kmeans_fit(locs, numclusters)
-
-    filename = os.path.join(cf.clusterpath, '{}.{}'.format(base_filename, cluster_num))
-    joblib.dump(km.centers, filename)
-    return np.ndarray.flatten(km.centers)
-
-
 def generate_person_stats(base_filename, cf: config.Config):
     """ Generate person-specific statistics from all sensor data for that person,
     labeled or unlabeled. Statistics include:
@@ -158,17 +124,36 @@ def generate_person_stats(base_filename, cf: config.Config):
         3. center of visited locations
         4. span of visited locations
     """
+    threshold = 1200   # 2 minutes at 10Hz sample rate
     latitude, longitude, altitude, hour = read_locations(base_filename, cf)
     n = len(hour)
-    stats = hour_cluster(base_filename, latitude, longitude, altitude, hour, n, 0, 6, 3, 0, cf)
-    cc = hour_cluster(base_filename, latitude, longitude, altitude, hour, n, 6, 12, 3, 1, cf)
-    stats = np.append(stats, cc)
-    cc = hour_cluster(base_filename, latitude, longitude, altitude, hour, n, 12, 18, 3, 2, cf)
-    stats = np.append(stats, cc)
-    cc = hour_cluster(base_filename, latitude, longitude, altitude, hour, n, 18, 24, 3, 3, cf)
-    stats = np.append(stats, cc)
-    cc = hour_cluster(base_filename, latitude, longitude, altitude, hour, n, 0, 24, 3, 4, cf)
-    stats = np.append(stats, cc)
+    staypoints = []
+    loc1x = latitude[0]
+    loc1y = longitude[0]
+    loc1z = altitude[0]
+    count = 1
+    stay = 1
+    hour1 = hour[0]
+    while count < n:
+        loc2x = latitude[count]
+        loc2y = longitude[count]
+        loc2z = altitude[count]
+        if close_loc(loc1x, loc1y, loc2x, loc2y) == True:
+            stay += 1
+        else:
+            if stay >= threshold:
+                hour2 = hour[count]
+                staypoints.append((loc1x, loc1y, loc1z, stay, hour1, hour2))
+            loc1x = latitude[count]
+            loc1y = longitude[count]
+            loc1z = altitude[count]
+            stay = 1
+            hour1 = hour[count]
+        count += 1
+    if stay >= threshold:
+        hour2 = hour[count-1]
+        staypoints.append((loc1x, loc1y, loc1z, stay, hour1, hour2))
+    stats = process_staypoints(staypoints)
     stats = np.append(stats, np.mean(latitude))
     stats = np.append(stats, np.mean(longitude))
     stats = np.append(stats, np.mean(altitude))
@@ -179,6 +164,101 @@ def generate_person_stats(base_filename, cf: config.Config):
     maxvalue = np.max(longitude)
     stats = np.append(stats, maxvalue - minvalue)
     return [stats]
+
+
+def process_staypoints(staypoints):
+    n = len(staypoints)
+    sp0_24 = []
+    sp0_6 = []
+    sp6_12 = []
+    sp12_18 = []
+    sp18_24 = []
+    new_sp = []
+    for sp in staypoints:
+        found = False
+        for nsp in new_sp:
+            if close_loc(sp[0], sp[1], nsp[0], nsp[1]) == True:
+                found = True
+                new_sp.remove(nsp)
+                temp = (nsp[0], nsp[1], nsp[2], nsp[3] + sp[3], nsp[4], nsp[5])
+                new_sp.append(temp)
+                break
+        if found == False:
+            new_sp.append(sp)
+    for sp in new_sp:
+        if sp[4] in range(0, 6) or sp[4] in range(0, 6):
+            sp0_6.append(sp)
+        elif sp[4] in range(6, 12) or sp[4] in range(6, 12):
+            sp6_12.append(sp)
+        elif sp[4] in range(12, 18) or sp[4] in range(12, 18):
+            sp12_18.append(sp)
+        else:
+            sp0_24.append(sp)
+    mf = [staypoints[0], staypoints[0], staypoints[0]]
+    mf = most_frequent_staypoints(staypoints, mf)
+    stats = most_frequent_staypoints(sp0_6, mf)
+    stats = np.append(stats, most_frequent_staypoints(sp6_12, mf))
+    stats = np.append(stats, most_frequent_staypoints(sp12_18, mf))
+    stats = np.append(stats, most_frequent_staypoints(sp18_24, mf))
+    stats = np.append(stats, mf)
+    return stats
+
+
+def most_frequent_staypoints(sprange, mf):
+    n = len(sprange)
+    if n == 0:   # no staypoints
+        return mf
+    else:
+        v1 = (sprange[0][0], sprange[0][1], sprange[0][2])
+        c1 = sprange[0][3]
+        if n == 1:   # one staypoints
+            return [v1, v1, v1]
+        else:
+            if sprange[1][3] > sprange[0][3]:  # second staypoing more frequent
+                v2 = v1
+                c2 = c1
+                v1 = (sprange[1][0], sprange[1][1], sprange[1][2])
+                c1 = sprange[1][3]
+            else:
+                v2 = (sprange[1][0], sprange[1][1], sprange[1][2])
+                c2 = sprange[1][3]
+            if n == 2:   # two staypoints
+                return [v1, v2, v2]
+            else:
+                if sprange[2][3] < sprange[1][3]:
+                    v3 = (sprange[2][0], sprange[2][1], sprange[2][2])
+                    c3 = sprange[2][3]
+                elif sprange[2][3] < sprange[0][3]:
+                    v3 = v2
+                    c3 = c2
+                    v2 = (sprange[2][0], sprange[2][1], sprange[2][2])
+                    c2 = sprange[2][3]
+                else:
+                    v3 = v2
+                    c3 = c2
+                    v2 = v1
+                    c2 = c1
+                    v1 = (sprange[2][0], sprange[2][1], sprange[2][2])
+                    c1 = sprange[2][3]
+                for i in range(4, n):
+                    if sprange[i][3] > c3:
+                        if sprange[i][3] > c2:
+                            if sprange[i][3] > c1:
+                                v3 = v2
+                                c3 = c2
+                                v2 = v1
+                                c2 = c1
+                                v1 = (sprange[i][0],sprange[i][1],sprange[i][2])
+                                c1 = sprange[i][3]
+                            else:
+                                v3 = v2
+                                c3 = c2
+                                v2 = (sprange[i][0],sprange[i][1],sprange[i][2])
+                                c2 = sprange[i][3]
+                        else:
+                            v3 = (sprange[i][0], sprange[i][1], sprange[i][2])
+                            c3 = sprange[i][3]
+    return [v1, v2, v3]
 
 
 def main(base_filename, cf: config.Config):
