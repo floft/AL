@@ -44,9 +44,7 @@ def calculate_distance(lat1, long1, lat2, long2):
 def close_loc(lat1, long1, lat2, long2):
     """ Determine if one location is within threshold distance to another.
     """
-    d1 = (lat2 - lat1) * (lat2 - lat1)
-    d2 = (long2 - long1) * (long2 - long1)
-    distance = np.sqrt(d1 + d2)
+    distance = calculate_distance(lat1, long1, lat2, long2)
     if distance < 0.001:
         return True
     else:
