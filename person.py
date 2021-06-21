@@ -13,12 +13,9 @@ from collections import Counter
 from multiprocessing import Process
 from typing import List
 
-import joblib
 import numpy as np
 
 import config
-import kmeans
-import warnings
 
 from mobiledata import MobileData
 
@@ -58,7 +55,7 @@ def most_common(data):
     return c.most_common(1)[0][0]
 
 
-def calculate_person_features(al, person_stats, oc_clusters):
+def calculate_person_features(al, person_stats):
     """ Calculate person-specific features to include in feature vector.
     """
     results = list()
@@ -73,15 +70,42 @@ def calculate_person_features(al, person_stats, oc_clusters):
     results.append(np.mean(al.latitude) - meanlat)
     results.append(np.mean(al.longitude) - meanlong)
 
-    for i in range(al.conf.num_hour_clusters):
-        array = list()
+    for i in (0, 9, 18, 27, 36):
+        distances = np.zeros((3))
         size = min(al.conf.numseconds, len(al.latitude))
-        for j in range(size):
-            array.append((al.latitude[j], al.longitude[j], al.altitude[j]))
-
-        km = kmeans.KMeans()
-        labels = km.sorted_kmeans_predict(array, oc_clusters[i])
-        results.append(most_common(labels))
+        lat1 = person_stats[i]
+        long1 = person_stats[i+1]
+        distances[0] = \
+            calculate_distance(al.latitude[0], al.longitude[0], lat1, long1)
+        for j in range(2, size):
+            temp = calculate_distance(al.latitude[j], al.longitude[j], \
+                                      lat1, long1)
+            if temp < distances[0]:
+                distances[0] = temp
+        lat2 = person_stats[i+3]
+        long2 = person_stats[i+4]
+        distances[1] = \
+            calculate_distance(al.latitude[0], al.longitude[0], lat2, long2)
+        for j in range(2, size):
+            temp = calculate_distance(al.latitude[j], al.longitude[j], \
+                                      lat2, long2)
+            if temp < distances[1]:
+                distances[1] = temp
+        lat3 = person_stats[i+6]
+        long3 = person_stats[i+7]
+        distances[2] = \
+            calculate_distance(al.latitude[0], al.longitude[0], lat3, long3)
+        for j in range(2, size):
+            temp = calculate_distance(al.latitude[j], al.longitude[j], \
+                                      lat3, long3)
+            if temp < distances[2]:
+                distances[2] = temp
+        closest = np.argmin(distances)
+        closest_distance = np.min(distances)
+        if closest_distance < 0.01:
+           results.append(closest)
+        else:
+           results.append(4)
     return results
 
 
