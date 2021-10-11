@@ -76,12 +76,6 @@ class Config:
         self.datapath = './data/'  # directory containing files of sensor data
         self.modelpath = './models/'  # directory containing trained models
 
-        # Data augmentation:
-        self.data_augmentation = False  # whether to use data augmentation
-        self.da_num_jitter = 25  # number of copies of window using gps jitter
-        self.da_jitter_limit = 0.005  # limit of gps jitter
-        self.da_num_interpolations = 25  # number of interpolation copies
-
         # Defaults for the CSV field headers of interest
         self.stamp_field_name = STAMP_CSV_FIELD
         self.label_field_name = ACTIVITY_LABEL_CSV_FIELD
