@@ -17,6 +17,7 @@ Code and data may not be used or distributed without permission from WSU.
 """
 import collections
 import os
+from os.path import exists
 from datetime import datetime
 from typing import OrderedDict, Union, TextIO, Dict
 
@@ -50,8 +51,10 @@ class DMAnnotator(OC):
         # Load one-class models (use the list of activities set in the config):
         for activity in self.conf.activities:
             model_filename = os.path.join(self.conf.modelpath, f'{activity}.pkl')
-
-            models[activity] = joblib.load(model_filename)
+            if exists(model_filename):
+                models[activity] = joblib.load(model_filename)
+            else:
+                models[activity] = None
 
         # Load the multi-class model:
         model_filename = os.path.join(self.conf.modelpath, 'model.pkl')
