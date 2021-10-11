@@ -51,8 +51,8 @@ class Config:
         self.loc_n_jobs = 1
 
         self.numsensors = 16  # Number of sensors generating readings each sample
-        self.samplerate = 1  # Number of sensor readings per second
-        self.numseconds = 5  # Number of data seconds to include in a single window
+        self.samplerate = 10  # Number of sensor readings per second
+        self.numseconds = 30  # Number of data seconds to include in a single window
 
         # Number of reading sets in one window
         self.samplesize = self.samplerate * self.numseconds
@@ -60,9 +60,9 @@ class Config:
         # Number of sensor readings in one window
         self.windowsize = self.samplesize * self.numsensors
         self.sfeatures = 1  # Use spatial features
-        self.translate = False  # Map activities to smaller set of activity names
+        self.translate = True  # Map activities to smaller set of activity names
         self.gpsfeatures = 1  # Use gps features
-        self.fftfeatures = 1  # Use FFT features
+        self.fftfeatures = 0  # Use FFT features
         self.personfeatures = 1  # Use person-specific features
         self.locmodel = 0  # Use learned model to generate a location type
         self.filter_data = True  # Apply signal processing filters to sensor data
@@ -87,9 +87,7 @@ class Config:
         self.label_field_name = ACTIVITY_LABEL_CSV_FIELD
 
         # default list of activity classes for overall activity
-        self.default_activity_list = ['Chores', 'Eat', 'Entertainment', 'Errands',
-                                      'Exercise', 'Hobby', 'Hygiene', 'Relax', 'School',
-                                      'Sleep', 'Travel', 'Work']
+        self.default_activity_list = ['Errands', 'Exercise', 'Hobby', 'Housework', 'Hygiene', 'Mealtime', 'Other', 'Relax', 'Sleep', 'Socialize', 'Travel', 'Work']
         # list of activity classes for overall activity
         self.activity_list = list()
 
