@@ -14,8 +14,17 @@ of Health under Grant Nos. R41EB029774 and R01AG065218.
 
 # Running AL
 
-AL requires packages `geopy`, `numpy`, `requests` and `scikit-learn`.  To install the packages
-for your environment, run:
+After cloning the Git repository, you will also need to initialize the `mobiledata` submodule.
+This allows AL to use the [Mobile AL Data Layer](https://github.com/WSU-CASAS/Mobile-AL-Data) for
+processing CSV data files. To do so, first go into the main AL directory you cloned and run these
+commands:
+```
+git submodule init
+git submodule update
+```
+
+AL also requires Pythong packages `geopy`, `numpy`, `requests` and `scikit-learn`.  To install the 
+packages for your environment, run:
 ```
 pip install geopy numpy requests scikit-learn
 ```
@@ -63,7 +72,9 @@ is reported based on accuracy and a corresponding confusion matrix is output.
 ```
 --annotate <n>
 ```
-Annotation method to use for labeling new data. Default is 1.
+Annotation method to use for labeling new data. Default is 0.
+
+A value of zero (the default) should be used when doing `train`, `test`, or `cv` modes. 
 
 With `--annotate 1`, the output is created in the same format as the input
 (one line per sensor value) with the last value being replaced by the
@@ -79,10 +90,11 @@ with the same name as the input file and suffix `.anncombine`.
 --numseconds <n>
 ```
 
-Number of data seconds to include in a single window. Default is 5.
+Number of data seconds to include in a single window. Default is 30.
 
-Note that the fixed data sample rate set in the code is 1 sample/second. Thus,
-a value of `5` for this parameter will result in a window size of 5 samples.
+Note that the fixed data sample rate set in the code is 10 samples/second. Thus,
+a value of `30` for this parameter will result in a window size of 300 samples. (If you wish
+to change the sample rate, it can be edited in `config.py`.)
 
 ```
 --extension <extension_string>
@@ -122,12 +134,23 @@ value is the list `['Airplane', 'Art', 'Bathe', 'Biking', 'Bus', 'Car', 'Chores'
 Specify list of overall (primary) activities to learn with a single
 multi-class classifier. There should be at least one occurrence of each
 activity in the training data. The default value is the list
-`['Chores', 'Eat', 'Entertainment', 'Errands', 'Exercise', 'Hobby', 'Hygiene', 'Relax',
-'School', 'Sleep', 'Travel', 'Work']`.
+`['Errands', 'Exercise', 'Hobby', 'Housework', 'Hygiene', 'Mealtime', 'Other', 'Relax', 'Sleep', 
+'Socialize', 'Travel', 'Work']`.
+
+Note that the activities in this list must each have at least one instance in the training data,
+so that there is some data to train a model for them. You also should not have any activity labels
+in the training data *without* a matching entry in this list. If using activity translations (see 
+below), the *translations* of the training labels must match up instead. (If there are no training 
+examples for an activity listed in this activity list, you will encounter errors about activities
+not being found in the list, at least in some modes.)
 
 ```
 --translate
 ```
+
+NOTE: This option is now enabled by default (you do not have to set `--translate` on the command
+line to use it.) If you *don't* want to use translations, set `translate = False` in `config.py`.
+
 If this option is provided, then activity names and location names will be
 mapped from their original values to a different (typically smaller) set of
 values. This option is generally used to compress the number of different
@@ -202,42 +225,38 @@ prediction, and a value for the multi-class classifier.
 # Input File(s)
 
 The input file(s) contains time-stamped sensor readings. An example is in the
-file `data.instances`. Each line of the input file contains a reading for
-a single sensor. The current version of AL assumes that there are 16 sensors.
-For any timepoint there will be 16 lines, each which has the same time and
-date but differ in the sensor name and value. An example is shown below.
-```
-2017-03-03 11:51:55.062000 Yaw Yaw 0.245832 0
-2017-03-03 11:51:55.062000 Pitch Pitch 0.011857 0
-2017-03-03 11:51:55.062000 Roll Roll -0.001035 0
-2017-03-03 11:51:55.062000 RotationRateX RotationRateX -3.7e-05 0
-2017-03-03 11:51:55.062000 RotationRateY RotationRateY 0.001487 0
-2017-03-03 11:51:55.062000 RotationRateZ RotationRateZ 0.001275 0
-2017-03-03 11:51:55.062000 UserAccelerationX UserAccelerationX -0.002322 0
-2017-03-03 11:51:55.062000 UserAccelerationY UserAccelerationY 0.000656 0
-2017-03-03 11:51:55.062000 UserAccelerationZ UserAccelerationZ 0.006353 0
-2017-03-03 11:51:55.062000 Latitude Latitude 33.74305 0
-2017-03-03 11:51:55.062000 Longitude Longitude -107.183205 0
-2017-03-03 11:51:55.062000 Altitude Altitude 787.196045 0
-2017-03-03 11:51:55.062000 Course Course -1.0 0
-2017-03-03 11:51:55.062000 Speed Speed 0.0 0
-2017-03-03 11:51:55.062000 HorizontalAccuracy HorizontalAccuracy 10.0 0
-2017-03-03 11:51:55.062000 VerticalAccuracy VerticalAccuracy 3.0 Work
-```
-The general format for the data contains 6 fields per line. The fields are:
+file `data.instances`. The file is in CSV format, with each line of the file showing the values of 
+all sensors at a single timestamp.
 
-* date: `yyyy-mm-dd`
-* time: `hh:mm:ss.ms`
-* sensor name
-* sensor name (in the current version the same name appears twice)
-* sensor reading
-* label: this is either 0 or a string indicating the activity label (this field
-         is required on all lines, but the actual activity label string is only
-         required on the last line for each timestamp)
+The first two lines of the file are special header lines. The first line lists all the columns
+in the CSV file, starting with the `stamp` (timestamp), followed by the 17 sensors, and ending with
+the `user_activity_label`. The second row specifies the data type for each of the columns:
+ * `dt` for datetime (timestamp) type
+ * `f` for float type
+ * `s` for string type
+
+Both header lines should be present in the file, in order to allow the Mobile Data layer to properly
+process the CSV file and get data in the proper Python types.
+
+The rest of the lines in the file are the data instances, each with its own timestamp, sensor 
+values, and (optionally) a label. Note that all sensor values are also optional. Any missing values
+are left blank in when reading in the CSV file, though they are often converted to `0.0` within
+the feature extraction code described below.
 
 Multiple files can be specified on the command line. The assumption is that
 a separate file of data is used for each person. This distinction will be
 important when extracting features for activity learning.
+
+For each data file passed in, AL will start a separate Python `multiprocessing` process to extract
+features for that file specifically. Each file's process extracts the features from the data in that
+file, and then sends the extracted instances back to the main process via a `multiprocessing` 
+`Queue`. Due to limitations with the `Queue`, if an input data file is particularly "large", it may
+cause the processing to hang when attempting to send the data back through the `Queue`. In this
+case, you will see messages about feature extraction finishing for some files, but then they are not
+listed as "done" in the subsequent output, and the main process never finishes. (The point
+at which this happens is architecture-dependent. A rough guideline is approximately 500,000 lines).
+If any of your input data files are larger than this (or you are finding the extraction hangs),
+you may wish to split up the offending file(s) into smaller chunks that will "fit" in the `Queue`.
 
 NOTE: Each input file name passed as `<inputfiles>` when calling `al.py` will have 
 the string from `--extension` appended to the end of it when processing.
@@ -260,7 +279,7 @@ location (`latitude` and `longitude`) and the span of their visited locations
 same root name as the input file and a .person suffix. Based on this stored
 information, person-specific features are extracted which include the
 normalized distance of the current sequence from the user's mean location and
-information related to their frequenct "staypoints".  As a note, the person.py script can 
+information related to their frequent "staypoints".  As a note, the person.py script can 
 be run separately using any data file, with or without activity labels, to generate 
 person-specific features and the associated .person files.
 
@@ -279,4 +298,47 @@ For the location values, features further include the heading change rate
 movement stops/starts within the sequence), and overall trajectory in
 the sequence. Additionally, reverse geocoding using OpenStreetMap
 and the `loc.translate` file is used to add the location type to the feature list.
+
+# Helpful Tips
+
+## Location Geocoding
+
+Because AL uses reverse geocoding using OpenStreetMap (Nominatim) for features, it needs to
+reverse-geocode every unknown location in the input data files. It will cache locations within
+a small radius of each other, but other locations must be individually geocoded. The resulting
+geocoded locations are then stored in the `locations` file within the same directory as AL.
+
+If the data files are large, AL may take a significant amount of time geocoding the locations,
+greatly increasing the feature extraction runtime. In order to avoid this, you may wish to
+"pre-geocode" the locations in the data files, before running AL. To do this, right each of the
+locations into the file as a separate line in the format:
+```
+latitude longitude
+```
+
+For example:
+```
+49.21 -117.01
+49.25 -117.3
+```
+
+Then, run the `gps.py` script on this file as input, which will output the cached geocoded locations
+to a `locations` file in the same directory:
+```
+python gps.py <input_location_tuples_file> 
+```
+
+Once the `locations` file has been created, you can then run `al.py` and other scripts as normal,
+and they will use the pre-geocoded locations.
+
+## Location File Updates
+
+The final step in the `al.py` script is to update the locations file with any new locations found
+while running (see the end of the `main()` function). This can also take a significant amount of
+time if there are lots of locations, as AL checks to make sure they do not already exist in the
+file. This manifests as AL seeming to finish training/testing models, but then taking a long time to
+finish.
+
+In order to reduce this in the case where you have already created the `locations` file (see above),
+you may comment out the `gps.update_locations()` call in `main()`.
 
