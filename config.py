@@ -46,18 +46,18 @@ class Config:
 
         # Number of jobs to run section.
         # Number of jobs to tell the AL models to use when available.
-        self.al_n_jobs = 20
+        self.al_n_jobs = 8
         # Number of jobs to tell the OC models to use when available.
-        self.oc_n_jobs = 20
+        self.oc_n_jobs = 8
         # Number of jobs to tell the Location models to use when available.
         self.loc_n_jobs = 1
 
         self.numsensors = 16  # Number of sensors generating readings each sample
         self.samplerate = 10  # Number of sensor readings per second
-        self.numseconds = 30  # Number of data seconds to include in a single window
+        self.numseconds = 12.8  # Number of data seconds to include in a single window
 
         # Number of reading sets in one window
-        self.samplesize = self.samplerate * self.numseconds
+        self.samplesize = int(self.samplerate * self.numseconds)
 
         # Number of sensor readings in one window
         self.windowsize = self.samplesize * self.numsensors
@@ -74,16 +74,16 @@ class Config:
         self.annotate = 0  # label new data from learned model
         self.num_wins_batch_predict = 100  # number of feature vectors to predict at once for ann.
         self.ann_num_events_between_labels = self.samplesize  # events moved before generating label
-        self.extension = '.instances'  # filename extension for training data
-        self.datapath = './data/'  # directory containing files of sensor data
-        self.modelpath = './models/'  # directory containing trained models
+        self.extension = ''  # filename extension for training data
+        self.datapath = ''  # directory containing files of sensor data
+        self.modelpath = ''  # directory containing trained models
 
         # Defaults for the CSV field headers of interest
         self.stamp_field_name = STAMP_CSV_FIELD
         self.label_field_name = ACTIVITY_LABEL_CSV_FIELD
 
         # default list of activity classes for overall activity
-        self.default_activity_list = ['Errands', 'Exercise', 'Hobby', 'Housework', 'Hygiene', 'Mealtime', 'Other', 'Relax', 'Sleep', 'Socialize', 'Travel', 'Work']
+        self.default_activity_list = ['Errands', 'Exercise', 'Hobby', 'Hygiene', 'Mealtime', 'Relax', 'Sleep', 'Travel', 'Work']
         # list of activity classes for overall activity
         self.activity_list = list()
 
