@@ -73,6 +73,7 @@ class Location:
                                           class_weight="balanced",
                                           max_depth=5,
                                           n_jobs=self.conf.loc_n_jobs)
+        self.gps_cache = {}
         return
 
     def map_location_name(self, name):
@@ -143,6 +144,12 @@ class Location:
         distance) to the locations already stored in the external list. Return
         closest location within the thresold, or None if none exist.
         """
+        # Return cached value if available
+        location_key = (latitude, longitude)
+
+        if location_key in self.gps_cache:
+            return self.gps_cache[location_key]
+
         threshold = 0.005
         find_loc = None
         for loc_tuple in self.locations:
@@ -153,6 +160,10 @@ class Location:
             if dist < threshold:
                 threshold = dist
                 find_loc = loc_tuple[2]
+
+        # Save to cache
+        if find_loc is not None:
+            self.gps_cache[location_key] = find_loc
         return find_loc
 
     def generate_gps_features(self, latitude, longitude):

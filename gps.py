@@ -60,17 +60,18 @@ def gps_read_locations(lfile):
 
 def update_locations(locations, locationsfile):
     locations = sorted(locations, key=itemgetter(0))
-    unique_locations = list()
+    unique_locations = {}
     output = open(locationsfile, "w")
     for location in locations:
         if len(location) > 4:
-            if location not in unique_locations:
+            location_key = (location[0], location[1])
+            if location_key not in unique_locations:
                 output.write(str(location[0]) + ' ')
                 output.write(str(location[1]) + ' ')
                 output.write(location[2] + ' ')
                 output.write(location[3] + ' ')
                 output.write(location[4] + '\n')
-        unique_locations.append(location)
+            unique_locations[location_key] = True
     output.close()
     return
 
