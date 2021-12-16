@@ -11,11 +11,13 @@ import copy
 
 MODE_CROSS_VALIDATION = 'cv'
 MODE_LEAVE_ONE_OUT = 'loo'
+MODE_EXPORT = 'export'
 MODE_TRAIN_MODEL = 'train'
 MODE_TEST_MODEL = 'test'
 MODE_ANNOTATE_DATA = 'ann'
 MODES = list([MODE_CROSS_VALIDATION,
               MODE_LEAVE_ONE_OUT,
+              MODE_EXPORT,
               MODE_TRAIN_MODEL,
               MODE_TEST_MODEL,
               MODE_ANNOTATE_DATA])

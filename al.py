@@ -36,6 +36,7 @@ from multiprocessing import Process, Queue
 from typing import Optional, Dict, Union, List, Tuple, TextIO, OrderedDict
 
 import joblib
+import pickle
 import numpy as np
 
 import activity
@@ -1057,6 +1058,20 @@ def main():
     elif cf.mode == config.MODE_LEAVE_ONE_OUT:
         # Do special leave-one-out train/test:
         leave_one_out(files=cf.files, al=al)
+    elif cf.mode == config.MODE_EXPORT:
+        # Don't train, just save the features
+        # Dictionary by filename of (list of list x, list of str y)
+        data_by_file = gather_features_by_file(files=cf.files, al=al)
+
+        # Save to pickle files
+        for input_filename, data in data_by_file.items():
+            output_filename = input_filename + ".pickle"
+
+            try:
+                with open(output_filename, 'wb') as f:
+                    pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+            except Exception as error:
+                print("Error saving {}: {}".format(output_filename, error))
     else:
         # The 3 remaining modes all require x,y feature data, so we generate those here.
         data_by_file = gather_features_by_file(files=cf.files, al=al)
