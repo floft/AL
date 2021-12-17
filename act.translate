@@ -185,6 +185,7 @@ Homeschooling Ignore
 Homework Work
 Homework_ Work
 Hospital Errands
+Housework Ignore
 Hw Work
 Hygiene Hygiene
 Ignore Ignore
@@ -235,6 +236,8 @@ Masterbate Ignore
 Masterbation Ignore
 Masterbating_ Ignore
 Masturbating_ Ignore
+Meal Mealtime
+Mealtime Mealtime
 Meeting Work
 Meeting_ Work
 Message Ignore
@@ -301,7 +304,7 @@ Reading_In_Cub Hobby
 Ready Hygiene
 Ready_For_Bed Hygiene
 Rec Exercise
-Relax Ignore
+Relax Relax
 Relax,Negative Ignore
 Relax,Neutral Ignore
 Relax,Postive Ignore
